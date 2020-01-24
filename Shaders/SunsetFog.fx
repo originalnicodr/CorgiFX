@@ -42,10 +42,12 @@ uniform bool Flip <
 	ui_category = "Colors";
 > = false;
 
-uniform bool Screenb <
-	ui_label = "Screen mode";
-	ui_category = "Colors";
-> = false;
+uniform int BlendM <
+	ui_type = "combo";
+	ui_label = "Blending Mode";
+	ui_tooltip = "Select the blending mode used with the gradient on the screen.";
+	ui_items = "Normal \0Multiply \0Screen \0Overlay \0Darken \0Lighten \0Color Dodge \0Color Burn \0Hard Light \0Soft Light \0Difference \0Exclusion \0Hue \0Saturation \0Color \0Luminosity";
+> = 0;
 
 uniform int Axis < __UNIFORM_SLIDER_INT1
 	ui_label = "Angle";
@@ -70,6 +72,11 @@ uniform float Offset < __UNIFORM_SLIDER_FLOAT1
 	ui_min = 0.0; ui_max = 0.5;
 	ui_category = "Color controls";
 > = 0.0;
+
+uniform bool FlipFog <
+	ui_label = "Fog flip";
+	ui_category = "Fog controls";
+> = false;
 
 uniform float MaxFogFactor <
 	ui_type = "slider";
@@ -128,6 +135,220 @@ float Overlay(float Layer)
 // Screen blending mode
 float3 Screen(float3 LayerA, float3 LayerB)
 { return 1.0 - (1.0 - LayerA) * (1.0 - LayerB); }
+
+// Multiply blending mode
+float3 Multiply(float3 LayerA, float3 LayerB)
+{ return LayerA * LayerB; }
+
+// Darken blending mode
+float3 Darken(float3 LayerA, float3 LayerB)
+{ return min(LayerA,LayerB); }
+
+// Lighten blending mode
+float3 Lighten(float3 LayerA, float3 LayerB)
+{ return max(LayerA,LayerB); }
+
+// Color Dodge blending mode
+float3 ColorDodge(float3 LayerA, float3 LayerB)
+{ if (LayerB.r < 1 && LayerB.g < 1 && LayerB.b < 1){
+	return min(1.0,LayerA/(1.0-LayerB));
+	}
+  else {//LayerB=1
+	return 1.0;
+  }
+}
+
+// Color Burn blending mode
+float3 ColorBurn(float3 LayerA, float3 LayerB)
+{ if (LayerB.r > 0 && LayerB.g > 0 && LayerB.b > 0){
+	return 1.0-min(1.0,(1.0-LayerA)/LayerB);
+	}
+  else {//LayerB=0
+	return 0;
+  }
+}
+
+// Hard light blending mode
+float3 HardLight(float3 LayerA, float3 LayerB)
+{ if (LayerB.r <= 0.5 && LayerB.g <=0.5 && LayerB.b <= 0.5){
+	return Multiply(LayerA,2*LayerB);
+	}
+  else {//LayerB>5
+	return Multiply(LayerA,2*LayerB-1);
+  }
+}
+
+float3 Aux(float3 x)
+{
+	if (x.r<=0.25 && x.g<=0.25 && x.b<=0.25) {
+		return ((16.0*x-12.0)*x+4)*x;
+	}
+	else {
+		return sqrt(x);
+	}
+}
+
+// Soft light blending mode
+float3 SoftLight(float3 LayerA, float3 LayerB)
+{ if (LayerB.r <= 0.5 && LayerB.g <=0.5 && LayerB.b <= 0.5){
+	return LayerA-(1.0-2*LayerB)*LayerA*(1-LayerA);
+	}
+  else {//LayerB>5
+	return LayerA+(2*LayerB-1.0)*(Aux(LayerA)-LayerA);
+  }
+}
+
+
+// Difference blending mode
+float3 Difference(float3 LayerA, float3 LayerB)
+{ return LayerA-LayerB; }
+
+// Exclusion blending mode
+float3 Exclusion(float3 LayerA, float3 LayerB)
+{ return LayerA+LayerB-2*LayerA*LayerB; }
+
+// Overlay blending mode
+float3 OverlayM(float3 LayerA, float3 LayerB)
+{ return HardLight(LayerB,LayerA); }
+
+
+float Lum(float3 c){
+	return (0.3*c.r+0.59*c.g+0.11*c.b);}
+
+float min3 (float a, float b, float c){
+	return min(a,(min(b,c)));
+}
+
+float max3 (float a, float b, float c){
+	return max(a,(max(b,c)));
+}
+
+float Sat(float3 c){
+	return max3(c.r,c.g,c.b)-min3(c.r,c.g,c.b);}
+
+float3 ClipColor(float3 c){
+	float l=Lum(c);
+	float n=min3(c.r,c.g,c.b);
+	float x=max3(c.r,c.g,c.b);
+	float cr=c.r;
+	float cg=c.g;
+	float cb=c.b;
+	if (n<0){
+		cr=l+(((cr-l)*l)/(l-n));
+		cg=l+(((cg-l)*l)/(l-n));
+		cb=l+(((cb-l)*l)/(l-n));
+	}
+	if (x>1){
+		cr=l+(((cr-l)*(1-l))/(x-l));
+		cg=l+(((cg-l)*(1-l))/(x-l));
+		cb=l+(((cb-l)*(1-l))/(x-l));
+	}
+	return float3(cr,cg,cb);
+}
+
+float3 SetLum (float3 c, float l){
+	float d= l-Lum(c);
+	return float3(c.r+d,c.g+d,c.b+d);
+}
+
+float3 SetSat(float3 c, float s){
+	float cr=c.r;
+	float cg=c.g;
+	float cb=c.b;
+	if (cr==max3(cr,cg,cb) && cb==min3(cr,cg,cb)){//caso r->max g->mid b->min
+		if (cr>cb){
+			cg=(((cg-cb)*s)/(cr-cb));
+			cr=s;
+		}
+		else{
+			cg=0;
+			cr=0;
+		}
+		cb=0;
+	}
+	else{
+		if (cr==max3(cr,cg,cb) && cg==min3(cr,cg,cb)){//caso r->max b->mid g->min
+			if (cr>cg){
+				cb=(((cb-cg)*s)/(cr-cg));
+				cr=s;
+			}
+			else{
+				cb=0;
+				cr=0;
+			}
+			cg=0;
+		}
+		else{
+			if (cg==max3(cr,cg,cb) && cb==min3(cr,cg,cb)){//caso g->max r->mid b->min
+				if (cg>cb){
+					cr=(((cr-cb)*s)/(cg-cb));
+					cg=s;
+				}
+				else{
+					cr=0;
+					cg=0;
+				}
+				cb=0;
+			}
+			else{
+				if (cg==max3(cr,cg,cb) && cr==min3(cr,cg,cb)){//caso g->max b->mid r->min
+					if (cg>cr){
+						cb=(((cb-cr)*s)/(cg-cr));
+						cg=s;
+					}
+					else{
+						cb=0;
+						cg=0;
+					}
+					cr=0;
+				}
+				else{
+					if (cb==max3(cr,cg,cb) && cg==min3(cr,cg,cb)){//caso b->max r->mid g->min
+						if (cb>cg){
+							cr=(((cr-cg)*s)/(cb-cg));
+							cb=s;
+						}
+						else{
+							cr=0;
+							cb=0;
+						}
+						cg=0;
+					}
+					else{
+						if (cb==max3(cr,cg,cb) && cr==min3(cr,cg,cb)){//caso b->max g->mid r->min
+							if (cb>cr){
+								cg=(((cg-cr)*s)/(cb-cr));
+								cb=s;
+							}
+							else{
+								cg=0;
+								cb=0;
+							}
+							cr=0;
+						}
+					}
+				}
+			}
+		}
+	}
+	return float3(cr,cg,cb);
+}
+
+float3 Hue(float3 b, float3 s){
+	return SetLum(SetSat(s,Sat(b)),Lum(b));
+}
+
+float3 Saturation(float3 b, float3 s){
+	return SetLum(SetSat(b,Sat(s)),Lum(b));
+}
+
+float3 ColorM(float3 b, float3 s){
+	return SetLum(s,Lum(b));
+}
+
+float3 Luminosity(float3 b, float3 s){
+	return SetLum(b,Lum(s));
+}
 
 //////////////////////////////////////
 // textures
@@ -196,15 +417,31 @@ void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texco
 	BlendMask = Overlay(BlendMask * 0.5 + 0.5); // Linear coordinates
 
 	const float depth = ReShade::GetLinearizedDepth(texcoord).r;
-	const float fogFactor = clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor);
-	if (!Screenb) {
-		fragment = lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - BlendMask : BlendMask), fogFactor), fogFactor);
-	}
-	else {
-		fragment = Screen(fragment.rgb,lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - BlendMask : BlendMask), fogFactor), fogFactor));
+	float fogFactor = clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor);
+
+	if (FlipFog) {fogFactor = 1-fogFactor;}
+	
+	float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - BlendMask : BlendMask), fogFactor), fogFactor);
+
+	switch (BlendM){
+			case 0:{fragment=prefragment;break;}
+			case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor);break;}
+			case 2:{fragment=lerp(fragment.rgb,Screen(fragment.rgb,prefragment),fogFactor);break;}
+			case 3:{fragment=lerp(fragment.rgb,OverlayM(fragment.rgb,prefragment),fogFactor);break;}
+			case 4:{fragment=lerp(fragment.rgb,Darken(fragment.rgb,prefragment),fogFactor);break;}
+			case 5:{fragment=lerp(fragment.rgb,Lighten(fragment.rgb,prefragment),fogFactor);break;}
+			case 6:{fragment=lerp(fragment.rgb,ColorDodge(fragment.rgb,prefragment),fogFactor);break;}
+			case 7:{fragment=lerp(fragment.rgb,ColorBurn(fragment.rgb,prefragment),fogFactor);break;}
+			case 8:{fragment=lerp(fragment.rgb,HardLight(fragment.rgb,prefragment),fogFactor);break;}
+			case 9:{fragment=lerp(fragment.rgb,SoftLight(fragment.rgb,prefragment),fogFactor);break;}
+			case 10:{fragment=lerp(fragment.rgb,Difference(fragment.rgb,prefragment),fogFactor);break;}
+			case 11:{fragment=lerp(fragment.rgb,Exclusion(fragment.rgb,prefragment),fogFactor);break;}
+			case 12:{fragment=lerp(fragment.rgb,Hue(fragment.rgb,prefragment),fogFactor);break;}
+			case 13:{fragment=lerp(fragment.rgb,Saturation(fragment.rgb,prefragment),fogFactor);break;}
+			case 14:{fragment=lerp(fragment.rgb,ColorM(fragment.rgb,prefragment),fogFactor);break;}
+			case 15:{fragment=lerp(fragment.rgb,Luminosity(fragment.rgb,prefragment),fogFactor);break;}
 	}
 }
-
 technique SunsetFog
 {
 	pass Otis_AFG_PassBloom0
