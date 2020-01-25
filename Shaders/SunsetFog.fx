@@ -1,4 +1,4 @@
-//SunsetFog shader by originalnicodr, a modified version of Adaptive fog by Otis with some code from the SunsetFilter by Jacob Maximilian Fober, all credits goes to them
+//SunsetFog shader by originalnicodr, a modified version of Adaptive fog by Otis, all credits goes to him
 
 ///////////////////////////////////////////////////////////////////
 // Simple depth-based fog powered with bloom to fake light diffusion.
@@ -12,34 +12,31 @@
 // By Otis / Infuse Project
 ///////////////////////////////////////////////////////////////////
 
-/* 
-SunsetFilter PS v1.0.0 (c) 2018 Jacob Maximilian Fober, 
-
-This work is licensed under the Creative Commons 
-Attribution-ShareAlike 4.0 International License. 
-To view a copy of this license, visit 
-http://creativecommons.org/licenses/by-sa/4.0/.
-*/
-// Lightly optimized by Marot Satil for the GShade project.
-
 #include "Reshade.fxh"
 #include "ReShadeUI.fxh"
 
-uniform float3 ColorA < __UNIFORM_COLOR_FLOAT3
+uniform float4 ColorA < __UNIFORM_COLOR_FLOAT4
 	ui_label = "Colour (A)";
     ui_type = "color";
-	ui_category = "Colors";
-> = float3(1.0, 0.0, 0.0);
+	ui_category = "Gradient controls";
+> = float4(1.0, 0.0, 0.0, 0.0);
 
-uniform float3 ColorB < __UNIFORM_COLOR_FLOAT3
+uniform float4 ColorB < __UNIFORM_COLOR_FLOAT4
 	ui_label = "Colour (B)";
 	ui_type = "color";
-	ui_category = "Colors";
-> = float3(0.0, 0.0, 0.0);
+	ui_category = "Gradient controls";
+> = float4(0.0, 0.0, 0.0, 0.0);
 
 uniform bool Flip <
 	ui_label = "Color flip";
-	ui_category = "Colors";
+	ui_category = "Gradient controls";
+> = false;
+
+uniform int GradientType <
+	ui_type = "combo";
+	ui_label = "Gradient Type";
+	ui_category = "Gradient controls";
+	ui_items = "Linear \0Radial \0Strip \0";
 > = false;
 
 uniform int BlendM <
@@ -47,36 +44,84 @@ uniform int BlendM <
 	ui_label = "Blending Mode";
 	ui_tooltip = "Select the blending mode used with the gradient on the screen.";
 	ui_items = "Normal \0Multiply \0Screen \0Overlay \0Darken \0Lighten \0Color Dodge \0Color Burn \0Hard Light \0Soft Light \0Difference \0Exclusion \0Hue \0Saturation \0Color \0Luminosity";
+	ui_category = "Gradient controls";
 > = 0;
-
-uniform int Axis < __UNIFORM_SLIDER_INT1
-	ui_label = "Angle";
-	#if __RESHADE__ < 40000
-		ui_step = 1;
-	#endif
-	ui_min = -180; ui_max = 180;
-	ui_category = "Color controls";
-> = -7;
 
 uniform float Scale < __UNIFORM_SLIDER_FLOAT1
 	ui_label = "Gradient sharpness";
-	ui_min = 0.5; ui_max = 1.0; ui_step = 0.005;
-	ui_category = "Color controls";
+	ui_min = -300.0; ui_max = 300.0; ui_step = 0.1;
+	ui_category = "Gradient controls";
 > = 1.0;
+
+
+
+
+uniform float Axis < __UNIFORM_SLIDER_INT1
+	ui_label = "Angle";
+	#if __RESHADE__ < 40000
+		ui_step = 0.1;
+	#endif
+	ui_min = -180.0; ui_max = 180.0;
+	ui_category = "Linear gradient control";
+> = -7;
 
 uniform float Offset < __UNIFORM_SLIDER_FLOAT1
 	ui_label = "Position";
 	#if __RESHADE__ < 40000
 		ui_step = 0.002;
 	#endif
-	ui_min = 0.0; ui_max = 0.5;
-	ui_category = "Color controls";
+	ui_min = -0.5; ui_max = 0.5;
+	ui_category = "Linear gradient control";
 > = 0.0;
 
-uniform bool FlipFog <
-	ui_label = "Fog flip";
-	ui_category = "Fog controls";
-> = false;
+uniform float Size < __UNIFORM_SLIDER_FLOAT1
+	ui_label = "Size";
+	#if __RESHADE__ < 40000
+		ui_step = 0.002;
+	#endif
+	ui_min = -1.0; ui_max = 0;
+	ui_category = "Radial gradient control";
+> = 0.0;
+
+uniform float2 Originc <
+	ui_category = "Radial gradient control";
+	ui_label = "Position";
+	ui_type = "slider";
+	ui_step = 0.001;
+	ui_min = 0.000; ui_max = 1.000;
+> = float2(0.5, 0.5);
+
+
+
+uniform float2 PositionS <
+	ui_category = "Strip gradient control";
+	ui_label = "Position";
+	ui_type = "slider";
+	ui_step = 0.001;
+	ui_min = 0; ui_max = 1;
+> = float2(0.5, 0.5);
+
+uniform float AnguloS <
+	ui_category = "Strip gradient control";
+	ui_label = "Angle";
+	ui_type = "slider";
+	ui_step = 0.001;
+	ui_min = 0; ui_max = 360;
+> = 0.0;
+
+
+uniform float SizeS <
+	ui_category = "Strip gradient control";
+	ui_label = "Size";
+	ui_type = "slider";
+	ui_step = 0.001;
+	ui_min = 0; ui_max = 100;
+> = 0.0;
+
+
+
+
+
 
 uniform float MaxFogFactor <
 	ui_type = "slider";
@@ -98,8 +143,16 @@ uniform float FogStart <
 	ui_type = "slider";
 	ui_min = 0.000; ui_max=1.000;
 	ui_step = 0.001;
+	ui_category = "Fog controls";
 	ui_tooltip = "Start of the fog. 0.0 is at the camera, 1.0 is at the horizon, 0.5 is halfway towards the horizon. Before this point no fog will appear.";
 > = 0.050;
+
+uniform bool FlipFog <
+	ui_label = "Fog flip";
+	ui_category = "Fog controls";
+> = false;
+
+
 
 uniform float BloomThreshold <
 	ui_type = "slider";
@@ -123,14 +176,6 @@ uniform float BloomWidth <
 	ui_tooltip = "Width of the bloom";
 	ui_category = "Bloom controls";
 > = 0.2;
-
-// Overlay blending mode
-float Overlay(float Layer)
-{
-	float Min = min(Layer, 0.5);
-	float Max = max(Layer, 0.5);
-	return 2 * (Min * Min + 2 * Max - Max * Max) - 1.5;
-}
 
 // Screen blending mode
 float3 Screen(float3 LayerA, float3 LayerB)
@@ -350,6 +395,16 @@ float3 Luminosity(float3 b, float3 s){
 	return SetLum(b,Lum(s));
 }
 
+
+//Aux function for strip gradient
+float DistToLine(float2 pt1, float2 pt2, float2 testPt)
+{
+  float2 lineDir = pt2 - pt1;
+  float2 perpDir = float2(lineDir.y, -lineDir.x);
+  float2 dirToPt1 = pt1 - testPt;
+  return abs(dot(normalize(perpDir), dirToPt1));
+}
+
 //////////////////////////////////////
 // textures
 //////////////////////////////////////
@@ -396,53 +451,109 @@ void PS_Otis_AFG_PerformBloom(float4 position : SV_Position, float2 texcoord : T
 
 void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texcoord: TEXCOORD, out float4 fragment: SV_Target0)
 {
-
     // Grab screen texture
-	fragment.rgb = tex2D(ReShade::BackBuffer, texcoord).rgb;
-
-	// Correct Aspect Ratio
-	float2 UvCoordAspect = texcoord;
-	UvCoordAspect.y += ReShade::AspectRatio * 0.5 - 0.5;
-	UvCoordAspect.y /= ReShade::AspectRatio;
-    // Center coordinates
-	UvCoordAspect = UvCoordAspect * 2 - 1;
-	UvCoordAspect *= Scale;
-
-	// Tilt vector
-	float Angle = radians(-Axis);
-	float2 TiltVector = float2(sin(Angle), cos(Angle));
-	// Blend Mask
-	float BlendMask = dot(TiltVector, UvCoordAspect) + Offset;
-
-	BlendMask = Overlay(BlendMask * 0.5 + 0.5); // Linear coordinates
+	fragment.rgba = tex2D(ReShade::BackBuffer, texcoord).rgb;
 
 	const float depth = ReShade::GetLinearizedDepth(texcoord).r;
 	float fogFactor = clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor);
 
 	if (FlipFog) {fogFactor = 1-fogFactor;}
 	
-	float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - BlendMask : BlendMask), fogFactor), fogFactor);
+	switch (GradientType){
+		case 0: {
+			// Correct Aspect Ratio
+			float2 UvCoordAspect = texcoord;
+			UvCoordAspect.y += ReShade::AspectRatio * 0.5 - 0.5;
+			UvCoordAspect.y /= ReShade::AspectRatio;
+    		// Center coordinates
+			UvCoordAspect = UvCoordAspect * 2 - 1;
+			UvCoordAspect *= Scale;
 
-	switch (BlendM){
-			case 0:{fragment=prefragment;break;}
-			case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor);break;}
-			case 2:{fragment=lerp(fragment.rgb,Screen(fragment.rgb,prefragment),fogFactor);break;}
-			case 3:{fragment=lerp(fragment.rgb,OverlayM(fragment.rgb,prefragment),fogFactor);break;}
-			case 4:{fragment=lerp(fragment.rgb,Darken(fragment.rgb,prefragment),fogFactor);break;}
-			case 5:{fragment=lerp(fragment.rgb,Lighten(fragment.rgb,prefragment),fogFactor);break;}
-			case 6:{fragment=lerp(fragment.rgb,ColorDodge(fragment.rgb,prefragment),fogFactor);break;}
-			case 7:{fragment=lerp(fragment.rgb,ColorBurn(fragment.rgb,prefragment),fogFactor);break;}
-			case 8:{fragment=lerp(fragment.rgb,HardLight(fragment.rgb,prefragment),fogFactor);break;}
-			case 9:{fragment=lerp(fragment.rgb,SoftLight(fragment.rgb,prefragment),fogFactor);break;}
-			case 10:{fragment=lerp(fragment.rgb,Difference(fragment.rgb,prefragment),fogFactor);break;}
-			case 11:{fragment=lerp(fragment.rgb,Exclusion(fragment.rgb,prefragment),fogFactor);break;}
-			case 12:{fragment=lerp(fragment.rgb,Hue(fragment.rgb,prefragment),fogFactor);break;}
-			case 13:{fragment=lerp(fragment.rgb,Saturation(fragment.rgb,prefragment),fogFactor);break;}
-			case 14:{fragment=lerp(fragment.rgb,ColorM(fragment.rgb,prefragment),fogFactor);break;}
-			case 15:{fragment=lerp(fragment.rgb,Luminosity(fragment.rgb,prefragment),fogFactor);break;}
+			float2 origin = float2(0.5, 0.5);
+			float2 uvtest= float2(texcoord.x-origin.x,texcoord.y-origin.y);
+			float angulo=radians(Axis);
+
+    		float len = length(uvtest);
+    		uvtest = float2(cos(angulo) * uvtest.x-sin(angulo)*uvtest.y, sin(angulo)*uvtest.y +cos(angulo)*uvtest.x)+Offset;
+			float test= saturate(uvtest.x*Scale+Offset);
+
+			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - test : test), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));
+			switch (BlendM){
+				case 0:{fragment=prefragment;break;}
+				case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 2:{fragment=lerp(fragment.rgb,Screen(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 3:{fragment=lerp(fragment.rgb,OverlayM(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 4:{fragment=lerp(fragment.rgb,Darken(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 5:{fragment=lerp(fragment.rgb,Lighten(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 6:{fragment=lerp(fragment.rgb,ColorDodge(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 7:{fragment=lerp(fragment.rgb,ColorBurn(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 8:{fragment=lerp(fragment.rgb,HardLight(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 9:{fragment=lerp(fragment.rgb,SoftLight(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 10:{fragment=lerp(fragment.rgb,Difference(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 11:{fragment=lerp(fragment.rgb,Exclusion(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 12:{fragment=lerp(fragment.rgb,Hue(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 13:{fragment=lerp(fragment.rgb,Saturation(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 14:{fragment=lerp(fragment.rgb,ColorM(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+				case 15:{fragment=lerp(fragment.rgb,Luminosity(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
+			}
+			break;
+		}
+		case 1: {
+			float distfromcenter=distance(float2(Originc.x, Originc.y), float2((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT,texcoord.y));
+			float testc=saturate((distfromcenter+Size)*Scale);
+
+			float4 rColor = lerp(ColorA,ColorB, testc);
+			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - testc : testc), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));
+			switch (BlendM){
+				case 0:{fragment=prefragment;break;}
+				case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 2:{fragment=lerp(fragment.rgb,Screen(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 3:{fragment=lerp(fragment.rgb,OverlayM(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 4:{fragment=lerp(fragment.rgb,Darken(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 5:{fragment=lerp(fragment.rgb,Lighten(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 6:{fragment=lerp(fragment.rgb,ColorDodge(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 7:{fragment=lerp(fragment.rgb,ColorBurn(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 8:{fragment=lerp(fragment.rgb,HardLight(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 9:{fragment=lerp(fragment.rgb,SoftLight(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 10:{fragment=lerp(fragment.rgb,Difference(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 11:{fragment=lerp(fragment.rgb,Exclusion(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 12:{fragment=lerp(fragment.rgb,Hue(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 13:{fragment=lerp(fragment.rgb,Saturation(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 14:{fragment=lerp(fragment.rgb,ColorM(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+				case 15:{fragment=lerp(fragment.rgb,Luminosity(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
+			}
+
+			break;
+		}
+		case 2: {
+			float2 ubs = texcoord;
+			ubs.y = 1.0 - ubs.y;
+			float tests = saturate((DistToLine(PositionS, float2(PositionS.x-sin(radians(AnguloS)),PositionS.y-cos(radians(AnguloS))), ubs) * 2.0)*Scale-SizeS);
+
+			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - tests : tests), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));
+			switch (BlendM){
+				case 0:{fragment=prefragment;break;}
+				case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 2:{fragment=lerp(fragment.rgb,Screen(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 3:{fragment=lerp(fragment.rgb,OverlayM(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 4:{fragment=lerp(fragment.rgb,Darken(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 5:{fragment=lerp(fragment.rgb,Lighten(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 6:{fragment=lerp(fragment.rgb,ColorDodge(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 7:{fragment=lerp(fragment.rgb,ColorBurn(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 8:{fragment=lerp(fragment.rgb,HardLight(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 9:{fragment=lerp(fragment.rgb,SoftLight(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 10:{fragment=lerp(fragment.rgb,Difference(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 11:{fragment=lerp(fragment.rgb,Exclusion(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 12:{fragment=lerp(fragment.rgb,Hue(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 13:{fragment=lerp(fragment.rgb,Saturation(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 14:{fragment=lerp(fragment.rgb,ColorM(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+				case 15:{fragment=lerp(fragment.rgb,Luminosity(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
+			}
+			break;
+		}
 	}
 }
-technique SunsetFog
+technique SunsetFogdev
 {
 	pass Otis_AFG_PassBloom0
 	{
@@ -457,3 +568,4 @@ technique SunsetFog
 		PixelShader = PS_Otis_AFG_BlendFogWithNormalBuffer;
 	}
 }
+
