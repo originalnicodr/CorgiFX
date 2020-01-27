@@ -15,17 +15,18 @@
 #include "Reshade.fxh"
 #include "ReShadeUI.fxh"
 
+
 uniform float4 ColorA < __UNIFORM_COLOR_FLOAT4
 	ui_label = "Colour (A)";
     ui_type = "color";
 	ui_category = "Gradient controls";
-> = float4(1.0, 0.0, 0.0, 0.0);
+> = float4(1.0, 0.0, 0.0, 1.0);
 
 uniform float4 ColorB < __UNIFORM_COLOR_FLOAT4
 	ui_label = "Colour (B)";
 	ui_type = "color";
 	ui_category = "Gradient controls";
-> = float4(0.0, 0.0, 0.0, 0.0);
+> = float4(0.0, 1.0, 0.0, 0.0);
 
 uniform bool Flip <
 	ui_label = "Color flip";
@@ -49,7 +50,7 @@ uniform int BlendM <
 
 uniform float Scale < __UNIFORM_SLIDER_FLOAT1
 	ui_label = "Gradient sharpness";
-	ui_min = -300.0; ui_max = 300.0; ui_step = 0.1;
+	ui_min = -10.0; ui_max = 10.0; ui_step = 0.01;
 	ui_category = "Gradient controls";
 > = 1.0;
 
@@ -63,7 +64,7 @@ uniform float Axis < __UNIFORM_SLIDER_INT1
 	#endif
 	ui_min = -180.0; ui_max = 180.0;
 	ui_category = "Linear gradient control";
-> = -7;
+> = 0.0;
 
 uniform float Offset < __UNIFORM_SLIDER_FLOAT1
 	ui_label = "Position";
@@ -79,7 +80,7 @@ uniform float Size < __UNIFORM_SLIDER_FLOAT1
 	#if __RESHADE__ < 40000
 		ui_step = 0.002;
 	#endif
-	ui_min = -1.0; ui_max = 0;
+	ui_min = 0.0; ui_max = 1.0;
 	ui_category = "Radial gradient control";
 > = 0.0;
 
@@ -88,8 +89,24 @@ uniform float2 Originc <
 	ui_label = "Position";
 	ui_type = "slider";
 	ui_step = 0.001;
-	ui_min = 0.000; ui_max = 1.000;
+	ui_min = -1.5; ui_max = 2;
 > = float2(0.5, 0.5);
+
+uniform float2 Modifierc <
+	ui_category = "Radial gradient control";
+	ui_label = "Modifier";
+	ui_type = "slider";
+	ui_step = 0.001;
+	ui_min = 0.000; ui_max = 10.000;
+> = float2(1.0, 1.0);
+
+uniform float AnguloR <
+	ui_category = "Radial gradient control";
+	ui_label = "Angle";
+	ui_type = "slider";
+	ui_step = 0.001;
+	ui_min = 0; ui_max = 360;
+> = 0.0;
 
 
 
@@ -119,33 +136,12 @@ uniform float SizeS <
 > = 0.0;
 
 
-
-
-
-
-uniform float MaxFogFactor <
-	ui_type = "slider";
-	ui_min = 0.000; ui_max=1.000;
-	ui_tooltip = "The maximum fog factor. 1.0 makes distant objects completely fogged out, a lower factor will shimmer them through the fog.";
-	ui_step = 0.001;
+uniform int FogType <
+	ui_type = "combo";
+	ui_label = "Fog type";
 	ui_category = "Fog controls";
-> = 0.8;
-
-uniform float FogCurve <
-	ui_type = "slider";
-	ui_min = 0.00; ui_max=175.00;
-	ui_step = 0.01;
-	ui_tooltip = "The curve how quickly distant objects get fogged. A low value will make the fog appear just slightly. A high value will make the fog kick in rather quickly. The max value in the rage makes it very hard in general to view any objects outside fog.";
-	ui_category = "Fog controls";
-> = 1.5;
-
-uniform float FogStart <
-	ui_type = "slider";
-	ui_min = 0.000; ui_max=1.000;
-	ui_step = 0.001;
-	ui_category = "Fog controls";
-	ui_tooltip = "Start of the fog. 0.0 is at the camera, 1.0 is at the horizon, 0.5 is halfway towards the horizon. Before this point no fog will appear.";
-> = 0.050;
+	ui_items = "Adaptive Fog \0Emphasize Fog \0";
+> = false;
 
 uniform bool FlipFog <
 	ui_label = "Fog flip";
@@ -154,12 +150,38 @@ uniform bool FlipFog <
 
 
 
+uniform float MaxFogFactor <
+	ui_type = "slider";
+	ui_min = 0.000; ui_max=1.000;
+	ui_tooltip = "The maximum fog factor. 1.0 makes distant objects completely fogged out, a lower factor will shimmer them through the fog.";
+	ui_step = 0.001;
+	ui_category = "AdaptiveFog controls";
+> = 0.8;
+
+uniform float FogCurve <
+	ui_type = "slider";
+	ui_min = 0.00; ui_max=175.00;
+	ui_step = 0.01;
+	ui_tooltip = "The curve how quickly distant objects get fogged. A low value will make the fog appear just slightly. A high value will make the fog kick in rather quickly. The max value in the rage makes it very hard in general to view any objects outside fog.";
+	ui_category = "AdaptiveFog controls";
+> = 1.5;
+
+uniform float FogStart <
+	ui_type = "slider";
+	ui_min = 0.000; ui_max=1.000;
+	ui_step = 0.001;
+	ui_category = "AdaptiveFog controls";
+	ui_tooltip = "Start of the fog. 0.0 is at the camera, 1.0 is at the horizon, 0.5 is halfway towards the horizon. Before this point no fog will appear.";
+> = 0.050;
+
+
+
 uniform float BloomThreshold <
 	ui_type = "slider";
 	ui_min = 0.00; ui_max=50.00;
 	ui_step = 0.1;
 	ui_tooltip = "Threshold for what is a bright light (that causes bloom) and what isn't.";
-	ui_category = "Bloom controls";
+	ui_category = "AdaptiveFog-Bloom controls";
 > = 10.25;
 
 uniform float BloomPower <
@@ -167,15 +189,83 @@ uniform float BloomPower <
 	ui_min = 0.000; ui_max=100.000;
 	ui_step = 0.1;
 	ui_tooltip = "Strength of the bloom";
-	ui_category = "Bloom controls";
+	ui_category = "AdaptiveFog-Bloom controls";
 > = 10.0;
 
 uniform float BloomWidth <
 	ui_type = "slider";
 	ui_min = 0.0000; ui_max=1.0000;
 	ui_tooltip = "Width of the bloom";
-	ui_category = "Bloom controls";
+	ui_category = "AdaptiveFog-Bloom controls";
 > = 0.2;
+
+
+uniform float FocusDepth <
+	ui_type = "slider";
+	ui_min = 0.000; ui_max = 1.000;
+	ui_step = 0.001;
+	ui_tooltip = "Manual focus depth of the point which has the focus. Range from 0.0, which means camera is the focus plane, till 1.0 which means the horizon is focus plane.";
+	ui_category = "EmphasizeFog controls";
+> = 0.026;
+uniform float FocusRangeDepth <
+	ui_type = "slider";
+	ui_min = 0.0; ui_max = 1.000;
+	ui_step = 0.001;
+	ui_tooltip = "The depth of the range around the manual focus depth which should be emphasized. Outside this range, de-emphasizing takes place";
+	ui_category = "EmphasizeFog controls";
+> = 0.001;
+uniform float FocusEdgeDepth <
+	ui_type = "slider";
+	ui_min = 0.000; ui_max = 1.000;
+	ui_tooltip = "The depth of the edge of the focus range. Range from 0.00, which means no depth, so at the edge of the focus range, the effect kicks in at full force,\ntill 1.00, which means the effect is smoothly applied over the range focusRangeEdge-horizon.";
+	ui_category = "EmphasizeFog controls";
+	ui_step = 0.001;
+> = 0.050;
+uniform bool Spherical <
+	ui_tooltip = "Enables Emphasize in a sphere around the focus-point instead of a 2D plane";
+	ui_category = "EmphasizeFog controls";
+> = false;
+uniform int Sphere_FieldOfView <
+	ui_type = "slider";
+	ui_min = 1; ui_max = 180;
+	ui_tooltip = "Specifies the estimated Field of View you are currently playing with. Range from 1, which means 1 Degree, till 180 which means 180 Degree (half the scene).\nNormal games tend to use values between 60 and 90.";
+	ui_category = "EmphasizeFog controls";
+> = 75;
+uniform float Sphere_FocusHorizontal <
+	ui_type = "slider";
+	ui_min = 0; ui_max = 1;
+	ui_tooltip = "Specifies the location of the focuspoint on the horizontal axis. Range from 0, which means left screen border, till 1 which means right screen border.";
+	ui_category = "EmphasizeFog controls";
+> = 0.5;
+uniform float Sphere_FocusVertical <
+	ui_type = "slider";
+	ui_min = 0; ui_max = 1;
+	ui_tooltip = "Specifies the location of the focuspoint on the vertical axis. Range from 0, which means upper screen border, till 1 which means bottom screen border.";
+	ui_category = "EmphasizeFog controls";
+> = 0.5;
+uniform float3 BlendColor <
+	ui_type = "color";
+	ui_tooltip = "Specifies the blend color to blend with the rest of the scene. in (Red, Green, Blue). Use dark colors to darken further away objects";
+	ui_category = "EmphasizeFog controls";
+> = float3(0.0, 0.0, 0.0);
+uniform float BlendFactor <
+	ui_type = "slider";
+	ui_min = 0.0; ui_max = 1.0;
+	ui_tooltip = "Specifies the factor BlendColor is blended. Range from 0.0, which means no color blending, till 1.0 which means full blend of the BlendColor";
+	ui_category = "EmphasizeFog controls";
+> = 0.0;
+uniform float EffectFactor <
+	ui_type = "slider";
+	ui_min = 0.0; ui_max = 1.0;
+	ui_tooltip = "Specifies the factor the blending is applied. Range from 0.0, which means the effect is off (normal image), till 1.0 which means the blended parts are\nfull blended";
+	ui_category = "EmphasizeFog controls";
+> = 0.9;
+
+
+#ifndef M_PI
+	#define M_PI 3.1415927
+#endif
+
 
 // Screen blending mode
 float3 Screen(float3 LayerA, float3 LayerB)
@@ -216,10 +306,10 @@ float3 ColorBurn(float3 LayerA, float3 LayerB)
 // Hard light blending mode
 float3 HardLight(float3 LayerA, float3 LayerB)
 { if (LayerB.r <= 0.5 && LayerB.g <=0.5 && LayerB.b <= 0.5){
-	return Multiply(LayerA,2*LayerB);
+	return clamp(Multiply(LayerA,2*LayerB),0,1);
 	}
   else {//LayerB>5
-	return Multiply(LayerA,2*LayerB-1);
+	return clamp(Multiply(LayerA,2*LayerB-1),0,1);
   }
 }
 
@@ -236,10 +326,10 @@ float3 Aux(float3 x)
 // Soft light blending mode
 float3 SoftLight(float3 LayerA, float3 LayerB)
 { if (LayerB.r <= 0.5 && LayerB.g <=0.5 && LayerB.b <= 0.5){
-	return LayerA-(1.0-2*LayerB)*LayerA*(1-LayerA);
+	return clamp(LayerA-(1.0-2*LayerB)*LayerA*(1-LayerA),0,1);
 	}
   else {//LayerB>5
-	return LayerA+(2*LayerB-1.0)*(Aux(LayerA)-LayerA);
+	return clamp(LayerA+(2*LayerB-1.0)*(Aux(LayerA)-LayerA),0,1);
   }
 }
 
@@ -405,6 +495,29 @@ float DistToLine(float2 pt1, float2 pt2, float2 testPt)
   return abs(dot(normalize(perpDir), dirToPt1));
 }
 
+
+
+
+//rotate vector spec
+float2 rotate(float2 v,float2 o, float a){
+	float2 v2= v-o;
+	v2=float2((cos(a) * v2.x-sin(a)*v2.y),sin(a)*v2.x +cos(a)*v2.y);
+	v2=v2+o;
+	return v2;
+}
+
+
+
+
+//Auxiliar lagrange formulas
+
+float lagrangeg(float x0, float x1, float x2){
+	return((x0-x1)/(x0-x1))*((x0-x2)/(x0-x2));
+}
+
+
+
+
 //////////////////////////////////////
 // textures
 //////////////////////////////////////
@@ -449,25 +562,52 @@ void PS_Otis_AFG_PerformBloom(float4 position : SV_Position, float2 texcoord : T
 	fragment = saturate(color);
 }
 
+float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
+{
+	const float scenedepth = ReShade::GetLinearizedDepth(texcoord);
+	const float scenefocus =  FocusDepth;
+	const float desaturateFullRange = FocusRangeDepth+FocusEdgeDepth;
+	float depthdiff;
+	
+	if(Spherical == true)
+	{
+		texcoord.x = (texcoord.x-Sphere_FocusHorizontal)*ReShade::ScreenSize.x;
+		texcoord.y = (texcoord.y-Sphere_FocusVertical)*ReShade::ScreenSize.y;
+		const float degreePerPixel = Sphere_FieldOfView / ReShade::ScreenSize.x;
+		const float fovDifference = sqrt((texcoord.x*texcoord.x)+(texcoord.y*texcoord.y))*degreePerPixel;
+		depthdiff = sqrt((scenedepth*scenedepth)+(scenefocus*scenefocus)-(2*scenedepth*scenefocus*cos(fovDifference*(2*M_PI/360))));
+	}
+	else
+	{
+		depthdiff = abs(scenedepth-scenefocus);
+	}
+
+	if (depthdiff > desaturateFullRange)
+		return saturate(1.0);
+	else
+		return saturate(smoothstep(0, desaturateFullRange, depthdiff));
+}
+
 void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texcoord: TEXCOORD, out float4 fragment: SV_Target0)
 {
     // Grab screen texture
 	fragment.rgba = tex2D(ReShade::BackBuffer, texcoord).rgb;
 
 	const float depth = ReShade::GetLinearizedDepth(texcoord).r;
-	float fogFactor = clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor);
+	float fogFactor;
+	switch(FogType){
+		case 0:{
+			fogFactor=clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor);break;
+		}
+		case 1:{
+			fogFactor= 1-CalculateDepthDiffCoC(texcoord.xy);break;
+		}
+	}
 
-	if (FlipFog) {fogFactor = 1-fogFactor;}
+	if (FlipFog) {fogFactor = 1-clamp(saturate(depth - FogStart) * FogCurve, 0.0, 1-MaxFogFactor);}
 	
 	switch (GradientType){
 		case 0: {
-			// Correct Aspect Ratio
-			float2 UvCoordAspect = texcoord;
-			UvCoordAspect.y += ReShade::AspectRatio * 0.5 - 0.5;
-			UvCoordAspect.y /= ReShade::AspectRatio;
-    		// Center coordinates
-			UvCoordAspect = UvCoordAspect * 2 - 1;
-			UvCoordAspect *= Scale;
 
 			float2 origin = float2(0.5, 0.5);
 			float2 uvtest= float2(texcoord.x-origin.x,texcoord.y-origin.y);
@@ -475,7 +615,11 @@ void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texco
 
     		float len = length(uvtest);
     		uvtest = float2(cos(angulo) * uvtest.x-sin(angulo)*uvtest.y, sin(angulo)*uvtest.y +cos(angulo)*uvtest.x)+Offset;
-			float test= saturate(uvtest.x*Scale+Offset);
+			float test= saturate(uvtest.x*pow(2,abs(Scale))+Offset);
+			if (Scale<0){
+				test= saturate(uvtest.x*(-pow(2,abs(Scale)))+Offset);
+			}
+			
 
 			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - test : test), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));
 			switch (BlendM){
@@ -499,8 +643,21 @@ void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texco
 			break;
 		}
 		case 1: {
-			float distfromcenter=distance(float2(Originc.x, Originc.y), float2((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT,texcoord.y));
-			float testc=saturate((distfromcenter+Size)*Scale);
+			float distfromcenter=distance(float2(Originc.x*Modifierc.x, Originc.y*Modifierc.y), float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT)*Modifierc.x,texcoord.y*Modifierc.y));
+			
+			float angulo=radians(AnguloR);
+
+			float2 uvtemp=float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),texcoord.y);
+
+			float dist2 = distance(Originc*Modifierc,rotate(uvtemp,Originc,angulo)*Modifierc);
+
+			float dist3 = distance(float2(Originc.x*Modifierc.x+lagrangeg(0.5,0,1)*(0.5*(1-Modifierc.x))+lagrangeg(0,0.5,1)*(-0.39)+lagrangeg(1,0,0.5)*(1.39*(1.3-Modifierc.x)),Originc.y*Modifierc.y),rotate(uvtemp,Originc,angulo)*Modifierc);
+
+
+			float testc=saturate((dist2-Size)*(exp(abs(Scale))));
+			if (Scale<0){
+				testc=saturate((dist2-Size)*(-exp(abs(Scale))));
+			}
 
 			float4 rColor = lerp(ColorA,ColorB, testc);
 			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - testc : testc), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));
@@ -528,8 +685,8 @@ void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texco
 		case 2: {
 			float2 ubs = texcoord;
 			ubs.y = 1.0 - ubs.y;
-			float tests = saturate((DistToLine(PositionS, float2(PositionS.x-sin(radians(AnguloS)),PositionS.y-cos(radians(AnguloS))), ubs) * 2.0)*Scale-SizeS);
-
+			float tests = saturate((DistToLine(PositionS, float2(PositionS.x-sin(radians(AnguloR)),PositionS.y-cos(radians(AnguloR))), ubs) * 2.0)*(pow(2,Scale+2))-SizeS);//el numero sumando al scale es para mejorar la interfaz
+			//probar tests con distance
 			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - tests : tests), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));
 			switch (BlendM){
 				case 0:{fragment=prefragment;break;}
@@ -553,7 +710,9 @@ void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texco
 		}
 	}
 }
-technique SunsetFogdev
+
+
+technique CanvasFog
 {
 	pass Otis_AFG_PassBloom0
 	{
@@ -568,4 +727,3 @@ technique SunsetFogdev
 		PixelShader = PS_Otis_AFG_BlendFogWithNormalBuffer;
 	}
 }
-
