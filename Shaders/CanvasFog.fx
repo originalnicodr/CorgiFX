@@ -685,7 +685,7 @@ void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texco
 		case 2: {
 			float2 ubs = texcoord;
 			ubs.y = 1.0 - ubs.y;
-			float tests = saturate((DistToLine(PositionS, float2(PositionS.x-sin(radians(AnguloR)),PositionS.y-cos(radians(AnguloR))), ubs) * 2.0)*(pow(2,Scale+2))-SizeS);//el numero sumando al scale es para mejorar la interfaz
+			float tests = saturate((DistToLine(PositionS, float2(PositionS.x-sin(radians(AnguloS)),PositionS.y-cos(radians(AnguloS))), ubs) * 2.0)*(pow(2,Scale+2))-SizeS);//el numero sumando al scale es para mejorar la interfaz
 			//probar tests con distance
 			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - tests : tests), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));
 			switch (BlendM){
