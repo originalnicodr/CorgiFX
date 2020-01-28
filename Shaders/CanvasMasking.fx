@@ -351,7 +351,7 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float4 f
         case 2:{
             float2 ubs = texcoord;
 			ubs.y = 1.0 - ubs.y;
-			float tests = saturate((DistToLine(PositionS, float2(PositionS.x-sin(radians(AnguloR)),PositionS.y-cos(radians(AnguloR))), ubs) * 2.0)*(pow(2,Scale+2))-SizeS);
+			float tests = saturate((DistToLine(PositionS, float2(PositionS.x-sin(radians(AnguloS)),PositionS.y-cos(radians(AnguloS))), ubs) * 2.0)*(pow(2,Scale+2))-SizeS);
 			fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, tex2D(ReShade::BackBuffer, texcoord).rgb, fogFactor*lerp(AlphaA, AlphaB, tests));break;
         }
     }
