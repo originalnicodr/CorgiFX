@@ -33,6 +33,18 @@ uniform bool Flip <
 	ui_category = "Gradient controls";
 > = false;
 
+uniform bool ColorpA<
+	ui_label = "Color A picker";
+	ui_category = "Gradient controls";
+	ui_tooltip = "Select a color from the screen to be used instead of ColorA. Left-click to sample. Take in mind that it still uses the alpha channel from the color A.\nIts recommended to assign a hotkey.";
+> = false;
+
+uniform bool ColorpB<
+	ui_label = "Color B picker";
+	ui_category = "Gradient controls";
+	ui_tooltip = "Select a color from the screen to be used instead of ColorB. Left-click to sample. Take in mind that it still uses the alpha channel from the color B.\nIts recommended to assign a hotkey.";
+> = false;
+
 uniform int GradientType <
 	ui_type = "combo";
 	ui_label = "Gradient Type";
@@ -528,6 +540,22 @@ texture   Otis_BloomTarget 	{ Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Form
 //////////////////////////////////////
 sampler2D Otis_BloomSampler { Texture = Otis_BloomTarget; };
 
+
+texture Testtext { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; };
+sampler TestSampler { Texture = Testtext; };
+
+texture ATexture1		{ Width = 1; Height = 1;};		// for storing the new color value
+sampler ColorAsavernew		{ Texture = ATexture1; };
+
+texture ATexture2		{ Width = 1; Height = 1;};		// for storing the old color value
+sampler ColorAsaverold		{ Texture = ATexture2; };
+
+texture BTexture1		{ Width = 1; Height = 1;};		// for storing the new color value
+sampler ColorBsavernew		{ Texture = BTexture1; };
+
+texture BTexture2		{ Width = 1; Height = 1;};		// for storing the old color value
+sampler ColorBsaverold		{ Texture = BTexture2; };
+
 // pixel shader which performs bloom, by CeeJay. 
 void PS_Otis_AFG_PerformBloom(float4 position : SV_Position, float2 texcoord : TEXCOORD0, out float4 fragment: SV_Target0)
 {
@@ -561,6 +589,9 @@ void PS_Otis_AFG_PerformBloom(float4 position : SV_Position, float2 texcoord : T
 	color.rgb = lerp(color.rgb,BlurColor.rgb, Bloomamount);	
 	fragment = saturate(color);
 }
+
+uniform float2 MouseCoords < source = "mousepoint"; >;
+uniform bool LeftMouseDown < source = "mousebutton"; keycode = 0; toggle = false; >;
 
 float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
 {
@@ -605,6 +636,11 @@ void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texco
 	}
 
 	if (FlipFog) {fogFactor = 1-clamp(saturate(depth - FogStart) * FogCurve, 0.0, 1-MaxFogFactor);}
+
+	float3 ColorAreal= ColorpA ? tex2D (ColorAsavernew, float2(0,0)).rgb : ColorA;
+	float3 ColorBreal= ColorpB ? tex2D (ColorBsavernew, float2(0,0)).rgb : ColorB;
+
+
 	
 	switch (GradientType){
 		case 0: {
@@ -621,7 +657,7 @@ void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texco
 			}
 			
 
-			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - test : test), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));
+			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorAreal.rgb, ColorBreal.rgb, Flip ? 1 - test : test), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));
 			switch (BlendM){
 				case 0:{fragment=prefragment;break;}
 				case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - test : test));break;}
@@ -660,7 +696,7 @@ void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texco
 			}
 
 			float4 rColor = lerp(ColorA,ColorB, testc);
-			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - testc : testc), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));
+			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorAreal.rgb, ColorBreal.rgb, Flip ? 1 - testc : testc), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));
 			switch (BlendM){
 				case 0:{fragment=prefragment;break;}
 				case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - testc : testc));break;}
@@ -685,9 +721,9 @@ void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texco
 		case 2: {
 			float2 ubs = texcoord;
 			ubs.y = 1.0 - ubs.y;
-			float tests = saturate((DistToLine(PositionS, float2(PositionS.x-sin(radians(AnguloS)),PositionS.y-cos(radians(AnguloS))), ubs) * 2.0)*(pow(2,Scale+2))-SizeS);//el numero sumando al scale es para mejorar la interfaz
+			float tests = saturate((DistToLine(PositionS, float2(PositionS.x-sin(radians(AnguloS)),PositionS.y-cos(radians(AnguloS))), ubs) * 2.0)*(pow(2,Scale-SizeS+2))-SizeS);//el numero sumando al scale es para mejorar la interfaz
 			//probar tests con distance
-			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorA.rgb, ColorB.rgb, Flip ? 1 - tests : tests), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));
+			float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(ColorAreal.rgb, ColorBreal.rgb, Flip ? 1 - tests : tests), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));
 			switch (BlendM){
 				case 0:{fragment=prefragment;break;}
 				case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - tests : tests));break;}
@@ -711,9 +747,55 @@ void PS_Otis_AFG_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 texco
 	}
 }
 
+void ColorAgrab(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 Image : SV_Target)
+{
+	// Grab the color selected 
+	if (LeftMouseDown) {Image = tex2D(ReShade::BackBuffer, MouseCoords*ReShade::PixelSize).rgb;}
+	else {Image=tex2D(ColorAsaverold, float2(0,0)).rgb;}
+}
+
+void ColorAcopy(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 Image : SV_Target)
+{
+	// Grab the color selected 
+	Image = tex2D(ColorAsavernew, float2(0,0)).rgb;
+}
+
+void ColorBgrab(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 Image : SV_Target)
+{
+	// Grab the color selected 
+	if (LeftMouseDown) {Image = tex2D(ReShade::BackBuffer, MouseCoords*ReShade::PixelSize).rgb;}
+	else {Image=tex2D(ColorBsaverold, float2(0,0)).rgb;}
+}
+
+void ColorBcopy(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 Image : SV_Target)
+{
+	// Grab the color selected 
+	Image = tex2D(ColorBsavernew, float2(0,0)).rgb;
+}
+
 
 technique CanvasFog
 {
+	pass ColorpickercopyA{
+		VertexShader = PostProcessVS;
+		PixelShader = ColorAcopy;
+		RenderTarget = ATexture2;
+	}
+	pass ColorpickerA{
+		VertexShader = PostProcessVS;
+		PixelShader = ColorAgrab;
+		RenderTarget = ATexture1;
+	}
+	pass ColorpickercopyB{
+		VertexShader = PostProcessVS;
+		PixelShader = ColorBcopy;
+		RenderTarget = BTexture2;
+	}
+	pass ColorpickerB{
+		VertexShader = PostProcessVS;
+		PixelShader = ColorBgrab;
+		RenderTarget = BTexture1;
+	}
 	pass Otis_AFG_PassBloom0
 	{
 		VertexShader = PostProcessVS;
