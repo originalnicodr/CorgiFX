@@ -48,10 +48,6 @@
 #define StageTexPlus "Stageplus.png"//Put your image file name here or remplace the original image
 #endif
 
-texture Stage_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=TEXFORMAT; };
-
-sampler Stage_sampler { Texture = Stage_texture; };
-
 uniform float Stage_Opacity <
     ui_label = "Opacity";
     ui_tooltip = "Set the transparency of the image.";
@@ -88,7 +84,7 @@ uniform int BlendM <
 	ui_type = "combo";
 	ui_label = "Blending Mode";
 	ui_tooltip = "Select the blending mode used with the gradient on the screen.";
-	ui_items = "Normal \0Multiply \0Screen \0Overlay \0Darken \0Lighten \0Color Dodge \0Color Burn \0Hard Light \0Soft Light \0Difference \0Exclusion \0Hue \0Saturation \0Color \0Luminosity";
+	ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0";
 > = 0;
 
 uniform float Stage_depth <
@@ -98,6 +94,11 @@ uniform float Stage_depth <
 	ui_label = "Depth";
 > = 0.97;
 
+texture Stage_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=TEXFORMAT; };
+
+sampler Stage_sampler { Texture = Stage_texture; };
+
+//Blending modes functions
 
 // Screen blending mode
 float3 Screen(float3 LayerA, float3 LayerB)
@@ -117,53 +118,22 @@ float3 Lighten(float3 LayerA, float3 LayerB)
 
 // Color Dodge blending mode
 float3 ColorDodge(float3 LayerA, float3 LayerB)
-{ if (LayerB.r < 1 && LayerB.g < 1 && LayerB.b < 1){
-	return min(1.0,LayerA/(1.0-LayerB));
-	}
-  else {//LayerB=1
-	return 1.0;
-  }
-}
+{ return (LayerB.r < 1 && LayerB.g < 1 && LayerB.b < 1) ? min(1.0,LayerA/(1.0-LayerB)) : 1.0;}
 
 // Color Burn blending mode
 float3 ColorBurn(float3 LayerA, float3 LayerB)
-{ if (LayerB.r > 0 && LayerB.g > 0 && LayerB.b > 0){
-	return 1.0-min(1.0,(1.0-LayerA)/LayerB);
-	}
-  else {//LayerB=0
-	return 0;
-  }
-}
+{ return (LayerB.r > 0 && LayerB.g > 0 && LayerB.b > 0) ? 1.0-min(1.0,(1.0-LayerA)/LayerB) : 0;}
 
 // Hard light blending mode
 float3 HardLight(float3 LayerA, float3 LayerB)
-{ if (LayerB.r <= 0.5 && LayerB.g <=0.5 && LayerB.b <= 0.5){
-	return clamp(Multiply(LayerA,2*LayerB),0,1);
-	}
-  else {//LayerB>5
-	return clamp(Multiply(LayerA,2*LayerB-1),0,1);
-  }
-}
+{ return (LayerB.r <= 0.5 && LayerB.g <=0.5 && LayerB.b <= 0.5) ? clamp(Multiply(LayerA,2*LayerB),0,1) : clamp(Multiply(LayerA,2*LayerB-1),0,1);}
 
 float3 Aux(float3 x)
-{
-	if (x.r<=0.25 && x.g<=0.25 && x.b<=0.25) {
-		return ((16.0*x-12.0)*x+4)*x;
-	}
-	else {
-		return sqrt(x);
-	}
-}
+{ return (x.r<=0.25 && x.g<=0.25 && x.b<=0.25) ? ((16.0*x-12.0)*x+4)*x : sqrt(x);}
 
 // Soft light blending mode
 float3 SoftLight(float3 LayerA, float3 LayerB)
-{ if (LayerB.r <= 0.5 && LayerB.g <=0.5 && LayerB.b <= 0.5){
-	return clamp(LayerA-(1.0-2*LayerB)*LayerA*(1-LayerA),0,1);
-	}
-  else {//LayerB>5
-	return clamp(LayerA+(2*LayerB-1.0)*(Aux(LayerA)-LayerA),0,1);
-  }
-}
+{ return (LayerB.r <= 0.5 && LayerB.g <=0.5 && LayerB.b <= 0.5) ? clamp(LayerA-(1.0-2*LayerB)*LayerA*(1-LayerA),0,1) : clamp(LayerA+(2*LayerB-1.0)*(Aux(LayerA)-LayerA),0,1);}
 
 
 // Difference blending mode
@@ -175,7 +145,7 @@ float3 Exclusion(float3 LayerA, float3 LayerB)
 { return LayerA+LayerB-2*LayerA*LayerB; }
 
 // Overlay blending mode
-float3 OverlayM(float3 LayerA, float3 LayerB)
+float3 Overlay(float3 LayerA, float3 LayerB)
 { return HardLight(LayerB,LayerA); }
 
 
@@ -317,7 +287,6 @@ float3 Luminosity(float3 b, float3 s){
 	return SetLum(b,Lum(s));
 }
 
-
 //rotate vector spec
 float2 rotate(float2 v,float2 o, float a){
 	float2 v2= v-o;
@@ -330,21 +299,17 @@ float2 rotate(float2 v,float2 o, float a){
 void PS_StageDepth(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, out float4 color : SV_Target)
 {
 	float4 backbuffer = tex2D(ReShade::BackBuffer, texcoord).rgba;
-
 	float depth = 1 - ReShade::GetLinearizedDepth(texcoord).r;
-
 	float2 uvtemp=float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),texcoord.y);
 	const float4 layer     = tex2D(Stage_sampler, (rotate(uvtemp,Layer_Pos+0.5,radians(Axis))*Layer_Scale-((Layer_Pos+0.5)*Layer_Scale-0.5))).rgba;
-	
 	float4 precolor   = lerp(backbuffer, layer, layer.a * Stage_Opacity);
-
 	if( depth < Stage_depth )
 	{
 		switch (BlendM){
 			case 0:{color = lerp(backbuffer.rgb, precolor.rgb, layer.a * Stage_Opacity);break;}
 			case 1:{color = lerp(backbuffer, Multiply(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
 			case 2:{color = lerp(backbuffer, Screen(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 3:{color = lerp(backbuffer, OverlayM(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
+			case 3:{color = lerp(backbuffer, Overlay(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
 			case 4:{color = lerp(backbuffer, Darken(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
 			case 5:{color = lerp(backbuffer, Lighten(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
 			case 6:{color = lerp(backbuffer, ColorDodge(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
