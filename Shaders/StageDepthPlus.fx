@@ -48,55 +48,61 @@
 #define StageTexPlus "Stageplus.png"//Put your image file name here or remplace the original image
 #endif
 
+  ////////////
+ /// MENU ///
+////////////
+
 uniform float Stage_Opacity <
-    ui_label = "Opacity";
-    ui_tooltip = "Set the transparency of the image.";
     ui_type = "slider";
-    ui_min = 0.0;
-    ui_max = 1.0;
+    ui_label = "Opacity";
+    ui_min = 0.0; ui_max = 1.0;
     ui_step = 0.002;
+    ui_tooltip = "Set the transparency of the image.";
 > = 1.0;
 
 uniform float2 Layer_Scale <
   	ui_type = "slider";
 	ui_label = "Scale";
-	ui_min = 0.01; ui_max = 5.0;
 	ui_step = 0.01;
+	ui_min = 0.01; ui_max = 5.0;
 > = (1.001,1.001);
 
 uniform float2 Layer_Pos <
   	ui_type = "slider";
 	ui_label = "Position";
-	ui_min = -1.5; ui_max = 1.5;
 	ui_step = 0.001;
-> = (0,0);
+	ui_min = -1.5; ui_max = 1.5;
+> = (0,0);	
 
 uniform float Axis <
 	ui_type = "slider";
 	ui_label = "Angle";
-	#if __RESHADE__ < 40000
-		ui_step = 0.1;
-	#endif
+	ui_step = 0.1;
 	ui_min = -180.0; ui_max = 180.0;
 > = 0.0;
 
 uniform int BlendM <
 	ui_type = "combo";
 	ui_label = "Blending Mode";
-	ui_tooltip = "Select the blending mode used with the gradient on the screen.";
 	ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0";
+	ui_tooltip = "Select the blending mode used with the image.";
 > = 0;
 
 uniform float Stage_depth <
 	ui_type = "slider";
-	ui_min = 0.0;
-	ui_max = 1.0;
+	ui_min = 0.0; ui_max = 1.0;
 	ui_label = "Depth";
 > = 0.97;
 
-texture Stage_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=TEXFORMAT; };
+//////////////////////////////////////
+// textures
+//////////////////////////////////////
+texture Stageplus_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=TEXFORMAT; };
 
-sampler Stage_sampler { Texture = Stage_texture; };
+//////////////////////////////////////
+// samplers
+//////////////////////////////////////
+sampler Stageplus_sampler { Texture = Stageplus_texture; };
 
 //Blending modes functions
 
@@ -295,13 +301,15 @@ float2 rotate(float2 v,float2 o, float a){
 	return v2;
 }
 
-
+  //////////////
+ /// SHADER ///
+//////////////
 void PS_StageDepth(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, out float4 color : SV_Target)
 {
 	float4 backbuffer = tex2D(ReShade::BackBuffer, texcoord).rgba;
 	float depth = 1 - ReShade::GetLinearizedDepth(texcoord).r;
 	float2 uvtemp=float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),texcoord.y);
-	const float4 layer     = tex2D(Stage_sampler, (rotate(uvtemp,Layer_Pos+0.5,radians(Axis))*Layer_Scale-((Layer_Pos+0.5)*Layer_Scale-0.5))).rgba;
+	const float4 layer     = tex2D(Stageplus_sampler, (rotate(uvtemp,Layer_Pos+0.5,radians(Axis))*Layer_Scale-((Layer_Pos+0.5)*Layer_Scale-0.5))).rgba;
 	float4 precolor   = lerp(backbuffer, layer, layer.a * Stage_Opacity);
 	if( depth < Stage_depth )
 	{

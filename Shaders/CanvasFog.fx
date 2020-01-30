@@ -20,13 +20,13 @@
  /// MENU ///
 ////////////
 
-uniform float4 ColorA < __UNIFORM_COLOR_FLOAT4
+uniform float4 ColorA < 
 	ui_label = "Colour (A)";
     ui_type = "color";
 	ui_category = "Gradient controls";
 > = float4(1.0, 0.0, 0.0, 1.0);
 
-uniform float4 ColorB < __UNIFORM_COLOR_FLOAT4
+uniform float4 ColorB < 
 	ui_label = "Colour (B)";
 	ui_type = "color";
 	ui_category = "Gradient controls";
@@ -64,35 +64,33 @@ uniform int BlendM <
 	ui_category = "Gradient controls";
 > = 0;
 
-uniform float Scale < __UNIFORM_SLIDER_FLOAT1
+uniform float Scale < 
 	ui_label = "Gradient sharpness";
+	ui_type = "slider";
 	ui_min = -10.0; ui_max = 10.0; ui_step = 0.01;
 	ui_category = "Gradient controls";
 > = 1.0;
 
-uniform float Axis < __UNIFORM_SLIDER_INT1
+uniform float Axis < 
 	ui_label = "Angle";
-	#if __RESHADE__ < 40000
-		ui_step = 0.1;
-	#endif
+	ui_type = "slider";
+	ui_step = 0.1;
 	ui_min = -180.0; ui_max = 180.0;
 	ui_category = "Linear gradient control";
 > = 0.0;
 
-uniform float Offset < __UNIFORM_SLIDER_FLOAT1
+uniform float Offset < 
+	ui_type = "slider";
 	ui_label = "Position";
-	#if __RESHADE__ < 40000
-		ui_step = 0.002;
-	#endif
+	ui_step = 0.002;
 	ui_min = -0.5; ui_max = 0.5;
 	ui_category = "Linear gradient control";
 > = 0.0;
 
-uniform float Size < __UNIFORM_SLIDER_FLOAT1
+uniform float Size < 
 	ui_label = "Size";
-	#if __RESHADE__ < 40000
-		ui_step = 0.002;
-	#endif
+	ui_type = "slider";
+	ui_step = 0.002;
 	ui_min = 0.0; ui_max = 1.0;
 	ui_category = "Radial gradient control";
 > = 0.0;
