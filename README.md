@@ -1,12 +1,10 @@
-# <span style="color:#bb4400"><font size="+4"> CorgiFX</font></span>
+# <span style="color:#bb4400">CorgiFX</span>
 
 Just shaders that i edit or make.
 
 I am new at writing shaders so please take that in mind while reading the code. Any code used from other shaders will be stated in the shader comments.
 
-<p align="center"><font size="+3"><span style="color:#bb0044">CanvasFog</span></font></p>
-
-
+# <p align="center"><span style="color:#bb0044">CanvasFog</span></p>
 
 If you are familiar with the Adaptive Fog shader then you know how the fog from that shader looks like, if not its basically a color you choose to blend with the depth. Taking that as an initial point i added the option to use gradients in the fog instead of a single color.
 
@@ -77,7 +75,7 @@ Its basically has the same features from the CanvasFog shader (that are relevant
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476269-aa40e800-4370-11ea-82b0-11361c59dc63.png">
 <i>Using adaptivefog-type mask with the DisplayDepth shader</i></p>
 
-<p align="center"> <font size="+3"><span style="color:#bb0044">StageDepthPlus</span></font></p>
+# <p align="center"><span style="color:#bb0044">StageDepthPlus</span></p>
 
 So again in one of those "i want to control x from shader y" moments i made some changes to the StageDepth shader. Here are the stuff it can do.
 
