@@ -58,7 +58,7 @@ If you are familiar with the Adaptive Fog shader then you know how the fog from 
 <i>Emphasize-type fog with lineal gradient and color blending mode</i></p>
 
 
-<p align="center"> <font size="+3"><span style="color:#bb0044">CanvasMasking</span></font></p>
+# <p align="center"><span style="color:#bb0044">CanvasMasking</span></p>
 
 While doing the CanvasFog shader i thought that it would be cool to have these gradient stuff alongside the depth buffer to use as a mask, so here it is.
 
