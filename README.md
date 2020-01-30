@@ -88,3 +88,21 @@ So again in one of those "i want to control x from shader y" moments i made some
 
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476247-a745f780-4370-11ea-930c-fe813ae3200b.png">
 <i>I like corgis</i></p>
+
+The side black bards you see in some images is because of the aspect ratio of the window of the game when i took the picture.
+
+## Bugs to be fix
+
+- 
+- 
+
+## Things to do
+- Fix the strip gradient dont mantaining the scale while changing the angle
+- Fix blending modes that clip some values
+- Fix the StageDepthPlus shader loading the image with square aspect ratio
+- Change the gradient to other color space
+- Work on the emphasize-type fog more
+- Add a color mask option to CanvasMasking (or make it another shader)
+
+
+Any bug or suggestion you got dont hesitate in writting it down.
