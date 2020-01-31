@@ -1,4 +1,5 @@
 //CanvasFog shader by originalnicodr, a modified version of Adaptive fog by Otis wich also use his code from Emphasize.fx, all credits goes to him
+//Check for updates here: https://github.com/originalnicodr/CorgiFX
 
 ///////////////////////////////////////////////////////////////////
 // Simple depth-based fog powered with bloom to fake light diffusion.
@@ -149,7 +150,7 @@ uniform float Sized <
 	ui_label = "Size";
 	ui_type = "slider";
 	ui_step = 0.002;
-	ui_min = 0.0; ui_max = 1.0;
+	ui_min = 0.0; ui_max = 7.0;
 	ui_category = "Diamond gradient control";
 > = 0.0;
 
@@ -261,6 +262,17 @@ uniform float FocusEdgeDepth <
 	ui_category = "EmphasizeFog controls";
 	ui_step = 0.001;
 > = 0.050;
+
+
+
+uniform float FogCurveE <
+	ui_label = "Sharpness";
+	ui_type = "slider";
+	ui_min = 0.00; ui_max=1;
+	ui_step = 0.01;
+	ui_category = "EmphasizeFog controls";
+> = 0;
+
 
 uniform bool Spherical <
 	ui_tooltip = "Enables Emphasize in a sphere around the focus-point instead of a 2D plane";
@@ -589,7 +601,9 @@ float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
 		texcoord.y = (texcoord.y-Sphere_FocusVertical)*ReShade::ScreenSize.y;
 		const float degreePerPixel = Sphere_FieldOfView / ReShade::ScreenSize.x;
 		const float fovDifference = sqrt((texcoord.x*texcoord.x)+(texcoord.y*texcoord.y))*degreePerPixel;
-		depthdiff = sqrt((scenedepth*scenedepth)+(scenefocus*scenefocus)-(2*scenedepth*scenefocus*cos(fovDifference*(2*M_PI/360))));
+		float fovt=cos(fovDifference*(2*M_PI/360));
+		depthdiff = sqrt((scenedepth*scenedepth)+(scenefocus*scenefocus)-(2*scenedepth*scenefocus*fovt-2*scenedepth*scenefocus*(1-FogCurveE)));
+		//depthdiff = sqrt((scenedepth*scenedepth)+(scenefocus*scenefocus)-(2*scenedepth*scenefocus));
 	}
 	else
 	{
@@ -599,7 +613,7 @@ float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
 	if (depthdiff > desaturateFullRange)
 		return saturate(1.0);
 	else
-		return saturate(smoothstep(0, desaturateFullRange, depthdiff));
+		return saturate(smoothstep(0, desaturateFullRange, (depthdiff*(1-FogCurveE))));
 }
 
 //Function used to blend the gradients and the screen
@@ -677,19 +691,17 @@ void PS_Otis_Original_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 
 		}
 		case 3:{
 			float angle=radians(Angulod);
-			float2 mod=rotate(Modifierd,float2(5,5),radians(45+Angulod));
-			//mod=float2(saturate(mod.x),saturate(mod.y));
-			//float2 uv=rotate(texcoord,Origind,radians(45));
-			//float2 uv=rotate(float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),texcoord.y),Origind,radians(Angulod));
-			//float2 uv=rotate(float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),texcoord.y),Origind,radians(45+Angulod));
-			
-			//float2 uv=rotate(float2(texcoord.x*Modifierd.x,texcoord.y*Modifierd.y),Origind,radians(45));
-			//uv=rotate(float2(((uv.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),uv.y*Modifierd.y),Origind,angle);
-			//float gradient = 1 - pow(max(abs((uv.x - Origind.x)/Sized), abs((uv.y - Origind.y)/Sized)),exp(Scale));
+			float2 mod=rotate(Modifierd,float2(1,1),radians(45));
 
-			//funca sin modificadores
-			float2 uv=rotate(float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT)*Modifierd.x,texcoord.y*Modifierd.y),Origind,angle);
-			float gradient = 1 - pow(max(abs((uv.x - Origind.x)/Sized), abs((uv.y - Origind.y)/Sized)),exp(Scale));
+			//float2 uv=rotate(float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),texcoord.y),Origind,radians(Angulod));
+			//uv=rotate(uv,Origind,radians(45));
+			//float gradient = 1 - pow(max(abs((uv.x*mod.x - Origind.x*mod.x)/Sized), abs((uv.y*mod.y - Origind.y*mod.y)/Sized)),exp(Scale));
+
+
+			//funca pero modificadores no giran
+			float2 uv=rotate(float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT)*Modifierd.x,texcoord.y*Modifierd.y),Origind*Modifierd,radians(45));
+			uv=rotate(uv,Origind*Modifierd,radians(Angulod));
+			float gradient = 1 - pow(max(abs((uv.x - Origind.x*Modifierd.x)/Sized), abs((uv.y - Origind.y*Modifierd.y)/Sized)),exp(Scale+3));
 			fragment= Blender(ColorAreal, ColorBreal, texcoord, saturate(gradient), fogFactor);
 			break;
 		}

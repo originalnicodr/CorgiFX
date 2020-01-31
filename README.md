@@ -10,7 +10,11 @@ If you are familiar with the Adaptive Fog shader then you know how the fog from 
 
 ## Features
 
-- **Gradients**: The available gradients are lineal, radial and strip, which they all have they'r own settings
+- **Gradients**: The available gradients (with their own settings) are:
+    - Linear
+    - Radial
+    - Strip
+    - Diamond
 - **Colors with alpha channel**: Besides having the option to choose 2 colors in the gradient, you can also change the alpha channel values to play around
 - **Color samplers**: You can pick the colors of the gradients from the screen
 - **Fog Types**: The name isnt the best, but it means that you can choose to use the adaptive fog-type or the emphasize fog-type wich isnt a fog technically speaking, but it affects the "surface" of objects in the fog range. Will let some pictures bellow.
