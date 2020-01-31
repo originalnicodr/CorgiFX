@@ -53,7 +53,7 @@ uniform int GradientType <
 	ui_type = "combo";
 	ui_label = "Gradient Type";
 	ui_category = "Gradient controls";
-	ui_items = "Linear\0Radial\0Strip\0";
+	ui_items = "Linear\0Radial\0Strip\0Diamond\0";
 > = 0;
 
 uniform int BlendM <
@@ -142,6 +142,42 @@ uniform float AnguloS <
 	ui_step = 0.001;
 	ui_min = 0; ui_max = 360;
 > = 0.0;
+
+
+
+uniform float Sized < 
+	ui_label = "Size";
+	ui_type = "slider";
+	ui_step = 0.002;
+	ui_min = 0.0; ui_max = 1.0;
+	ui_category = "Diamond gradient control";
+> = 0.0;
+
+uniform float2 Origind <
+	ui_category = "Diamond gradient control";
+	ui_label = "Position";
+	ui_type = "slider";
+	ui_step = 0.001;
+	ui_min = -1.5; ui_max = 2;
+> = float2(0.5, 0.5);
+
+uniform float2 Modifierd <
+	ui_category = "Diamond gradient control";
+	ui_label = "Modifier";
+	ui_type = "slider";
+	ui_step = 0.001;
+	ui_min = 0.000; ui_max = 10.000;
+> = float2(1.0, 1.0);
+
+uniform float Angulod <
+	ui_category = "Diamond gradient control";
+	ui_label = "Angle";
+	ui_type = "slider";
+	ui_step = 0.001;
+	ui_min = 0; ui_max = 360;
+> = 0.0;
+
+
 
 uniform int FogType <
 	ui_type = "combo";
@@ -637,6 +673,24 @@ void PS_Otis_Original_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 
 			ubs.y = 1.0 - ubs.y;
 			float gradient = saturate((DistToLine(PositionS, float2(PositionS.x-sin(radians(AnguloS)),PositionS.y-cos(radians(AnguloS))), ubs) * 2.0)*(pow(2,Scale-SizeS+2))-SizeS);//the pow is for smoother sliders
 			fragment= Blender(ColorAreal, ColorBreal, texcoord, gradient, fogFactor);
+			break;
+		}
+		case 3:{
+			float angle=radians(Angulod);
+			float2 mod=rotate(Modifierd,float2(5,5),radians(45+Angulod));
+			//mod=float2(saturate(mod.x),saturate(mod.y));
+			//float2 uv=rotate(texcoord,Origind,radians(45));
+			//float2 uv=rotate(float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),texcoord.y),Origind,radians(Angulod));
+			//float2 uv=rotate(float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),texcoord.y),Origind,radians(45+Angulod));
+			
+			//float2 uv=rotate(float2(texcoord.x*Modifierd.x,texcoord.y*Modifierd.y),Origind,radians(45));
+			//uv=rotate(float2(((uv.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),uv.y*Modifierd.y),Origind,angle);
+			//float gradient = 1 - pow(max(abs((uv.x - Origind.x)/Sized), abs((uv.y - Origind.y)/Sized)),exp(Scale));
+
+			//funca sin modificadores
+			float2 uv=rotate(float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT)*Modifierd.x,texcoord.y*Modifierd.y),Origind,angle);
+			float gradient = 1 - pow(max(abs((uv.x - Origind.x)/Sized), abs((uv.y - Origind.y)/Sized)),exp(Scale));
+			fragment= Blender(ColorAreal, ColorBreal, texcoord, saturate(gradient), fogFactor);
 			break;
 		}
 	}
