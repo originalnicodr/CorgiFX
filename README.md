@@ -62,7 +62,12 @@ If you are familiar with the Adaptive Fog shader then you know how the fog from 
 <i>Emphasize-type fog with lineal gradient and color blending mode</i></p>
 
 
-# <p align="center"><span style="color:#bb0044">CanvasMasking</span></p>
+
+<p align="center"><img src="https://user-images.githubusercontent.com/24371572/74173946-d0d50d80-4c11-11ea-8d39-b7df1f82a613.png">
+<i>Adaptive-type fog with diamond gradient and CanvasMask</i></p>
+
+
+# <p align="center"><span style="color:#bb0044">CanvasMask</span></p>
 
 While doing the CanvasFog shader i thought that it would be cool to have these gradient stuff alongside the depth buffer to use as a mask, so here it is.
 
@@ -97,10 +102,11 @@ The side black bards you see in some images is because of the aspect ratio of th
 
 # Things to do
 - Fix the strip gradient dont mantaining the scale while changing the angle
+- Fix the diamond gradient to rotate with the modifications done in the x and y axes
 - Fix blending modes that clip some values
 - Fix the StageDepthPlus shader loading the image with square aspect ratio
 - Change the gradient to other color space
 - Work on the emphasize-type fog more
-- Add a color mask option to CanvasMasking (or make it another shader)
+- Add a color mask option to CanvasMask (or make it another shader)
 
 Any bug or suggestion you got dont hesitate in writting it down.
