@@ -1,4 +1,5 @@
-//Made by originalnicdor. It used color convertion functions from xIddqDx, props to him
+//Made by originalnicdor. Based in the ColorIsolation shader from Daodan317081.
+//Color convertion functions from xIddqDx, props to him
 
 
 	  ////////////
@@ -7,46 +8,11 @@
 
 #include "ReShadeUI.fxh"
 
-uniform float3 ColorMask <
-	ui_label = "Color mask";
-    ui_type = "color";
-	ui_category = "Color masking controls";
-> = float3(1.0, 0.0, 0.0);
-
-uniform bool FlipColorMask <
-	ui_label = "Color mask flip";
-	ui_category = "Color masking controls";
-> = false;
-
-uniform float HueRange <
-	ui_category = "Color masking controls";
-	ui_label = "Hue Range";
-	ui_type = "slider";
-	ui_step = 0.001;
-	ui_min = 0; ui_max = 1;
-> = 0.0;
-
-uniform float SaturationRange <
-	ui_category = "Color masking controls";
-	ui_label = "Saturation Range";
-	ui_type = "slider";
-	ui_step = 0.001;
-	ui_min = 0; ui_max = 1;
-> = 0.0;
-
-uniform float BrigtnessRange <
-	ui_category = "Color masking controls";
-	ui_label = "Brightness Range";
-	ui_type = "slider";
-	ui_step = 0.001;
-	ui_min = 0; ui_max = 1;
-> = 0.0;
-
-uniform bool Colorp<
+/*uniform bool Colorp<
 	ui_label = "Color picker";
 	ui_category = "Color masking controls";
 	ui_tooltip = "Select a color from the screen to be used instead of ColorMask. Left-click to sample. \nIts recommended to assign a hotkey.";
-> = false;
+> = false;*/
 
 
 
@@ -76,6 +42,23 @@ uniform float fUIOverlapTwo <
     ui_min = 0.001; ui_max = 2.0;
     ui_step = 0.001;
 > = 0.3;
+
+
+/*uniform float SaturationRange <
+	ui_category = COLORISOLATION_CATEGORY_SETUP;
+	ui_label = "Saturation Range";
+	ui_type = "slider";
+	ui_step = 0.001;
+	ui_min = 0; ui_max = 1;
+> = 0.0;
+
+uniform float BrigtnessRange <
+	ui_category = COLORISOLATION_CATEGORY_SETUP;
+	ui_label = "Brightness Range";
+	ui_type = "slider";
+	ui_step = 0.001;
+	ui_min = 0; ui_max = 1;
+> = 0.0;*/
 
 uniform float fUIWindowHeightTwo <
     ui_type = "slider";
@@ -218,6 +201,12 @@ float distancespe5(float3 actualcolor,float3 desirecolor, float fuzziness){
 	float maxDistance = fuzziness * 441; // max distance, black -> white
 	float distance = sqrt(rDelta * rDelta + gDelta * gDelta + bDelta * bDelta);
 	return (distance < maxDistance) ? 1 : 0;
+}
+
+float distancespe6(float3 actualcolor,float3 desirecolor, float sm, float vm){//Both color must be in hsv, es distance 3 con rgb2hsv2
+	float3 nactualcolor=actualcolor-desirecolor;//centro de mi cubo
+	float d=sqrt(pow(max(0,(abs(nactualcolor.y))-sm),2)+pow(max(0,(abs(nactualcolor.z))-vm),2));
+	return d;
 }
 
 
@@ -424,13 +413,14 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float3 f
 
 
 
-	float3 actual=tex2D(ReShade::BackBuffer, texcoord).rgb;
+	float3 actual=tex2D(BeforeSampler, texcoord).rgb;
     const float3 luma = dot(actual, float3(0.2126, 0.7151, 0.0721)).rrr;
     const float3 param = float3(fUITargetHueTwo / 360.0, fUIOverlapTwo, fUIWindowHeightTwo);
-    const float value = CalculateValueTwo(RGBtoHSVTwo(actual).x, param.z, param.x, 1.0 - param.y);
+    float value = CalculateValueTwo(RGBtoHSVTwo(actual).x, param.z, param.x, 1.0 - param.y);
+	//float value2=distancespe4(RGBtoHSVTwo(actual), RGBtoHSVTwo(float3(255,0,0)),0,SaturationRange,BrigtnessRange);
+	//value2=FlipColorMask ? value2 : 1-value2;
 
-	//value=FlipColorMask ? value : 1-value;
-	fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, actual, value);
+	fragment=lerp(actual,tex2D(ReShade::BackBuffer, texcoord).rgb, value);
 
     if(bUIShowDiffTwo)
         fragment = value.rrr;
