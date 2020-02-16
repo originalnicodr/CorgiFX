@@ -1,56 +1,4 @@
-//Shader edited originalnicodr
-
-// Made by Marot Satil for the GShade ReShade package!
-// You can follow me via @MarotSatil on Twitter, but I don't use it all that much.
-// Follow @GPOSERS_FFXIV on Twitter and join us on Discord (https://discord.gg/39WpvU2)
-// for the latest GShade package updates!
-//
-// This shader was designed in the same vein as GreenScreenDepth.fx, but instead of applying a
-// green screen with adjustable distance, it applies a PNG texture with adjustable opacity.
-//
-// PNG transparency is fully supported, so you could for example add another moon to the sky
-// just as readily as create a "green screen" stage like in real life.
-//
-// Copyright (c) 2019, Marot Satil
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-// 1. Redistributions of source code must retain the above copyright
-//    notice, the header above it, this list of conditions, and the following disclaimer
-//    in this position and unchanged.
-// 2. Redistributions in binary form must reproduce the above copyright
-//    notice, the header above it, this list of conditions, and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//
-// THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS OR
-// IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-// OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-// IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
-// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-// NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-// THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-#include "Reshade.fxh"
-
-#if LAYER_SINGLECHANNEL
-    #define TEXFORMAT R8
-#else
-    #define TEXFORMAT RGBA8
-#endif
-
-#ifndef StageTexPlus
-#define StageTexPlus "Stageplus.png"//Put your image file name here or remplace the original image
-#endif
-
-  ////////////
- /// MENU ///
-////////////
+#include "ReShade.fxh"
 
 uniform bool FlipH < 
 	ui_label = "Flip Horizontal";
@@ -61,6 +9,22 @@ uniform bool FlipV <
 	ui_label = "Flip Vertical";
     ui_category = "Controls";
 > = false;
+
+uniform bool Freeze < 
+    ui_category = "Controls";
+> = false;
+
+uniform float Shot_depth_far <
+	ui_type = "slider";
+	ui_min = 0.0; ui_max = 1.0;
+	ui_label = "Shot depth far";
+> = 0;
+
+uniform float Shot_depth_close <
+	ui_type = "slider";
+	ui_min = 0.0; ui_max = 1.0;
+	ui_label = "Shot depth close";
+> = 1;
 
 uniform float Stage_Opacity <
     ui_type = "slider";
@@ -101,18 +65,33 @@ uniform int BlendM <
 uniform float Stage_depth <
 	ui_type = "slider";
 	ui_min = 0.0; ui_max = 1.0;
-	ui_label = "Depth";
+	ui_label = "Layer Depth";
 > = 0.97;
 
-//////////////////////////////////////
-// textures
-//////////////////////////////////////
-texture Stageplus_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=TEXFORMAT; };
 
-//////////////////////////////////////
-// samplers
-//////////////////////////////////////
-sampler Stageplus_sampler { Texture = Stageplus_texture; };
+texture FreezeTexold		{ Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=RGBA8;};
+texture FreezeTexnew		{ Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=RGBA8;};
+sampler FreezeSamplernew		{ Texture = FreezeTexold; };
+sampler FreezeSamplerold		{ Texture = FreezeTexnew; };
+
+void GrabFrame(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float4 Image : SV_Target)
+{
+	// Grab the color selected
+    float depth = 1 - ReShade::GetLinearizedDepth(UvCoord).r;
+	if (!Freeze){
+        Image= tex2D(ReShade::BackBuffer, UvCoord).rgba;
+        Image.a= (depth>Shot_depth_far && depth<Shot_depth_close) ? 1 : 0;
+        }
+    else{Image= tex2D(FreezeSamplerold, UvCoord).rgba;}
+}
+
+void SaveFrame(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float4 Image : SV_Target)
+{
+	// Grab the color selected 
+	Image = tex2D(FreezeSamplernew, UvCoord).rgba;
+}
+
+
 
 //Blending modes functions
 
@@ -303,7 +282,7 @@ float3 Luminosity(float3 b, float3 s){
 	return SetLum(b,Lum(s));
 }
 
-//rotate vector spec
+
 float2 rotate(float2 v,float2 o, float a){
 	float2 v2= v-o;
 	v2=float2((cos(a) * v2.x-sin(a)*v2.y),sin(a)*v2.x +cos(a)*v2.y);
@@ -311,49 +290,80 @@ float2 rotate(float2 v,float2 o, float a){
 	return v2;
 }
 
-  //////////////
- /// SHADER ///
-//////////////
-void PS_StageDepth(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, out float4 color : SV_Target)
+//float3 Freezef(float4 position : SV_Position, float2 texcoord : TexCoord, out float4 color : SV_Target)
+void Freezef(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, out float4 color : SV_Target)
 {
+    float2 Layer_Scalereal= float2 (Layer_Scale.x,Layer_Scale.y*16/9);
+    float2 Layer_Posreal= float2((FlipH) ? -Layer_Pos.x : Layer_Pos.x, (FlipV) ? -Layer_Pos.y:Layer_Pos.y);
 	float4 backbuffer = tex2D(ReShade::BackBuffer, texcoord).rgba;
 	float depth = 1 - ReShade::GetLinearizedDepth(texcoord).r;
-	float2 uvtemp=texcoord;
-	if (FlipH) {uvtemp.x = 1-uvtemp.x;}//horizontal flip
+    float2 uvtemp= texcoord;
+    if (FlipH) {uvtemp.x = 1-uvtemp.x;}//horizontal flip
     if (FlipV) {uvtemp.y = 1-uvtemp.y;} //vertical flip
-	uvtemp= float2(((uvtemp.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),uvtemp.y);
-	const float4 layer     = tex2D(Stageplus_sampler, (rotate(uvtemp,Layer_Pos+0.5,radians(Axis))*Layer_Scale-((Layer_Pos+0.5)*Layer_Scale-0.5))).rgba;
-	float4 precolor   = lerp(backbuffer, layer, layer.a * Stage_Opacity);
+	uvtemp=float2(((uvtemp.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),uvtemp.y);
+    uvtemp=(rotate(uvtemp,Layer_Posreal+0.5,radians(Axis))*Layer_Scalereal-((Layer_Posreal+0.5)*Layer_Scalereal-0.5));
+	const float4 layer     = tex2D(FreezeSamplernew, uvtemp).rgba;
+	float4 precolor   = lerp(backbuffer, layer, Stage_Opacity);
+    //float4 color;
 	if( depth < Stage_depth )
-	{
-		switch (BlendM){
-			case 0:{color = lerp(backbuffer.rgb, precolor.rgb, layer.a * Stage_Opacity);break;}
-			case 1:{color = lerp(backbuffer, Multiply(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 2:{color = lerp(backbuffer, Screen(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 3:{color = lerp(backbuffer, Overlay(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 4:{color = lerp(backbuffer, Darken(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 5:{color = lerp(backbuffer, Lighten(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 6:{color = lerp(backbuffer, ColorDodge(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 7:{color = lerp(backbuffer, ColorBurn(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 8:{color = lerp(backbuffer, HardLight(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 9:{color = lerp(backbuffer, SoftLight(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 10:{color = lerp(backbuffer, Difference(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 11:{color = lerp(backbuffer, Exclusion(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 12:{color = lerp(backbuffer, Hue(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 13:{color = lerp(backbuffer, Saturation(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 14:{color = lerp(backbuffer, ColorM(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-			case 15:{color = lerp(backbuffer, Luminosity(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-		}
+	{   
+        if (uvtemp.x>0 && uvtemp.x>0 && uvtemp.y>0 && uvtemp.y>0 && uvtemp.x<1 && uvtemp.x<1 && uvtemp.y<1 && uvtemp.y<1){
+		    switch (BlendM){
+		    	case 0:{color = lerp(backbuffer.rgba, precolor.rgba,layer.a*Stage_Opacity);break;}
+		    	case 1:{color = lerp(backbuffer, Multiply(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 2:{color = lerp(backbuffer, Screen(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+                case 3:{color = lerp(backbuffer, Overlay(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 4:{color = lerp(backbuffer, Darken(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 5:{color = lerp(backbuffer, Lighten(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 6:{color = lerp(backbuffer, ColorDodge(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 7:{color = lerp(backbuffer, ColorBurn(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 8:{color = lerp(backbuffer, HardLight(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 9:{color = lerp(backbuffer, SoftLight(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 10:{color = lerp(backbuffer, Difference(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 11:{color = lerp(backbuffer, Exclusion(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 12:{color = lerp(backbuffer, Hue(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 13:{color = lerp(backbuffer, Saturation(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 14:{color = lerp(backbuffer, ColorM(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 15:{color = lerp(backbuffer, Luminosity(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    }
+        }
 	}
 	color.a = backbuffer.a;
+    //return color;
 }
 
+/*float3 Freezef(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target{
+    //if (FlipH) {texcoord.x = 1-texcoord.x;}//horizontal flip
+    //if (FlipV) {texcoord.y = 1-texcoord.y;} //vertical flip
+    float2 framecoord=texcoord;
+    const float2 overlayPos = Layer_Pos * (1.0 - Layer_Scale) * BUFFER_SCREEN_SIZE;
+    //const float2 overlayPos = rotate(Layer_Pos * (1.0 - Layer_Scale) * BUFFER_SCREEN_SIZE,float2(0.5,0.5), radians(Axis));
 
-technique StageDepthPlus
+    if(all(vpos.xy >= overlayPos) && all(vpos.xy < overlayPos + BUFFER_SCREEN_SIZE * Layer_Scale))
+    {
+        framecoord = frac((framecoord - overlayPos / BUFFER_SCREEN_SIZE) / Layer_Scale);
+    }
+    framecoord=rotate(framecoord,Layer_Pos,radians(Axis));
+    float3 fragment = tex2D(ReShade::BackBuffer, texcoord).rgb;
+    return tex2D(FreezeSamplernew, framecoord).rgb;
+}*/
+
+technique FreezeShot
 {
-	pass
-	{
+	pass Grab{
 		VertexShader = PostProcessVS;
-		PixelShader = PS_StageDepth;
+		PixelShader = GrabFrame;
+		RenderTarget = FreezeTexold;
 	}
+    pass Save{
+		VertexShader = PostProcessVS;
+		PixelShader = SaveFrame;
+		RenderTarget = FreezeTexnew;
+	}
+
+    pass
+    {
+        VertexShader = PostProcessVS;
+        PixelShader = Freezef;
+    }
 }

@@ -32,7 +32,7 @@ uniform float AlphaB <
 > = 0.0;
 
 uniform bool Flip <
-	ui_label = "Color flip";
+	ui_label = "Inverse mask selection";
 	ui_category = "Gradient controls";
 > = false;
 
@@ -407,7 +407,7 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float4 f
 			//funca sin modificadores
 			//float2 uv=rotate(float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT)*Modifierd.x,texcoord.y*Modifierd.y),Origind,angle);
 			//float gradient = 1 - pow(max(abs((uv.x - Origind.x)/Sized), abs((uv.y - Origind.y)/Sized)),exp(Scale));
-			fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, tex2D(ReShade::BackBuffer, texcoord).rgb, fogFactor*lerp(AlphaA, AlphaB, gradient));break;
+			fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, tex2D(ReShade::BackBuffer, texcoord).rgb, fogFactor*lerp(AlphaA, AlphaB, saturate(gradient)));break;
 		}
     }
 }
