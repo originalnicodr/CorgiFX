@@ -61,7 +61,7 @@ uniform int BlendM <
 	ui_type = "combo";
 	ui_label = "Blending Mode";
 	ui_tooltip = "Select the blending mode used with the gradient on the screen.";
-	ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0";
+	ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0Linear burn\0Linear dodge\0Vivid light\0Linearlight\0Pin light\0Hardmix\0Reflect\0Glow";
 	ui_category = "Gradient controls";
 > = 0;
 
@@ -514,6 +514,27 @@ float3 Luminosity(float3 b, float3 s){
 	return SetLum(b,Lum(s));
 }
 
+
+//Blend functions priveded by prod80
+
+// Linearburn
+float3 Linearburn(float3 c, float3 b) 	{ return max(c+b-1.0f, 0.0f);}
+// Lineardodge
+float3 Lineardodge(float3 c, float3 b) 	{ return min(c+b, 1.0f);}
+// Vividlight
+float3 Vividlight(float3 c, float3 b) 	{ return b<0.5f ? ColorBurn(c, (2.0f*b)):ColorDodge(c, (2.0f*(b-0.5f)));}
+// Linearlight
+float3 Linearlight(float3 c, float3 b) 	{ return b<0.5f ? Linearburn(c, (2.0f*b)):Lineardodge(c, (2.0f*(b-0.5f)));}
+// Pinlight
+float3 Pinlight(float3 c, float3 b) 	{ return b<0.5f ? Darken(c, (2.0f*b)):Lighten(c, (2.0f*(b-0.5f)));}
+// Hard Mix
+float3 Hardmix(float3 c, float3 b)      { return Vividlight(c,b)<0.5f ? 0.0 : 1.0;}
+// Reflect
+float3 Reflect(float3 c, float3 b)      { return b>=0.999999f ? b:saturate(c*c/(1.0f-b));}
+// Glow
+float3 Glow(float3 c, float3 b)         { return Reflect(b, c);}
+
+
 //Aux function for strip gradient
 float DistToLine(float2 pt1, float2 pt2, float2 testPt)
 {
@@ -637,6 +658,14 @@ float3 Blender(float3 CA, float3 CB, float2 texcoord, float gradient, float fogF
 		case 13:{fragment=lerp(fragment.rgb,Saturation(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
 		case 14:{fragment=lerp(fragment.rgb,ColorM(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
 		case 15:{fragment=lerp(fragment.rgb,Luminosity(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
+		case 16:{fragment=lerp(fragment.rgb,Linearburn(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
+		case 17:{fragment=lerp(fragment.rgb,Lineardodge(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
+		case 18:{fragment=lerp(fragment.rgb,Vividlight(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
+		case 19:{fragment=lerp(fragment.rgb,Linearlight(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
+		case 20:{fragment=lerp(fragment.rgb,Pinlight(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
+		case 21:{fragment=lerp(fragment.rgb,Hardmix(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
+		case 22:{fragment=lerp(fragment.rgb,Reflect(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
+		case 23:{fragment=lerp(fragment.rgb,Glow(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
 	}
 	return fragment;
 }

@@ -94,8 +94,9 @@ uniform float Axis <
 uniform int BlendM <
 	ui_type = "combo";
 	ui_label = "Blending Mode";
-	ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0";
-	ui_tooltip = "Select the blending mode used with the image.";
+	ui_tooltip = "Select the blending mode used with the gradient on the screen.";
+	ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0Linear burn\0Linear dodge\0Vivid light\0Linearlight\0Pin light\0Hardmix\0Reflect\0Glow";
+	ui_category = "Gradient controls";
 > = 0;
 
 uniform float Stage_depth <
@@ -303,6 +304,25 @@ float3 Luminosity(float3 b, float3 s){
 	return SetLum(b,Lum(s));
 }
 
+//Blend functions priveded by prod80
+
+// Linearburn
+float3 Linearburn(float3 c, float3 b) 	{ return max(c+b-1.0f, 0.0f);}
+// Lineardodge
+float3 Lineardodge(float3 c, float3 b) 	{ return min(c+b, 1.0f);}
+// Vividlight
+float3 Vividlight(float3 c, float3 b) 	{ return b<0.5f ? ColorBurn(c, (2.0f*b)):ColorDodge(c, (2.0f*(b-0.5f)));}
+// Linearlight
+float3 Linearlight(float3 c, float3 b) 	{ return b<0.5f ? Linearburn(c, (2.0f*b)):Lineardodge(c, (2.0f*(b-0.5f)));}
+// Pinlight
+float3 Pinlight(float3 c, float3 b) 	{ return b<0.5f ? Darken(c, (2.0f*b)):Lighten(c, (2.0f*(b-0.5f)));}
+// Hard Mix
+float3 Hardmix(float3 c, float3 b)      { return Vividlight(c,b)<0.5f ? 0.0 : 1.0;}
+// Reflect
+float3 Reflect(float3 c, float3 b)      { return b>=0.999999f ? b:saturate(c*c/(1.0f-b));}
+// Glow
+float3 Glow(float3 c, float3 b)         { return Reflect(b, c);}
+
 //rotate vector spec
 float2 rotate(float2 v,float2 o, float a){
 	float2 v2= v-o;
@@ -343,6 +363,14 @@ void PS_StageDepth(in float4 position : SV_Position, in float2 texcoord : TEXCOO
 			case 13:{color = lerp(backbuffer, Saturation(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
 			case 14:{color = lerp(backbuffer, ColorM(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
 			case 15:{color = lerp(backbuffer, Luminosity(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
+			case 16:{color = lerp(backbuffer, Lineardodge(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
+			case 17:{color = lerp(backbuffer, Linearburn(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
+			case 18:{color = lerp(backbuffer, Vividlight(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
+			case 19:{color = lerp(backbuffer, Linearlight(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
+			case 20:{color = lerp(backbuffer, Pinlight(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
+			case 21:{color = lerp(backbuffer, Hardmix(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
+			case 22:{color = lerp(backbuffer, Reflect(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
+			case 23:{color = lerp(backbuffer, Glow(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
 		}
 	}
 	color.a = backbuffer.a;
