@@ -4,6 +4,8 @@ Just shaders that i edit or make.
 
 I am new at writing shaders so please take that in mind while reading the code. Any code used from other shaders will be stated in the shader comments.
 
+The side black bars you see in some images is because of the aspect ratio of the window of the game when i took the picture.
+
 # <p align="center"><span style="color:#bb0044">CanvasFog</span></p>
 
 If you are familiar with the Adaptive Fog shader then you know how the fog from that shader looks like, if not its basically a color you choose to blend with the depth. Taking that as an initial point i added the option to use gradients in the fog instead of a single color.
@@ -35,6 +37,16 @@ If you are familiar with the Adaptive Fog shader then you know how the fog from 
     - Saturation
     - Color
     - Luminosity
+    - Linear burn
+    - Linear dodge
+    - Vivid light
+    - Linearlight
+    - Pin light
+    - Hardmix
+    - Reflect
+    - Glow
+
+Last blending modes functions kindly provided by prod80.
 
 ## Some example images
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476225-9eedbc80-4370-11ea-8a58-57447dadf76e.png">
@@ -90,23 +102,56 @@ So again in one of those "i want to control x from shader y" moments i made some
 
 - **Scale**: Possibility to adjust the scale of the image in both axis individually
 - **Rotation**: This one speaks for itself, you can rotate the image
+- **Flip**: You can flip the image horizontally and vertically
 - **Blending Modes**: I wrote them for the CanvasFog shader and figured out they can be usefuls applied to an image
 - **Depth Control**: It already was in the original StageDepth. It uses the depth buffer to decide to show the image or not
+- **Depth map usage**: Kind of an experimental feature. You can provide a depthmap image alongside the stageplus image. This one will determine if the image is shown or not. There is an option to blend this depth map with the actual depth buffer so the layer can interact with the shaders that use the depth buffer, but this feature is kind of buggy at the moment (you would need to edit the position and scale values to match the ones in the StageDepthPlus shader for every shader you have). If you wanna use it replace the StageDepthPlusMap.fxh and ReShade.fxh files from your shaders folder with the ones in the repo and edit the global preprocessor definition RESHADE_MIX_STAGE_DEPTH_PLUS_MAP to 1.
 
 ## Some example images
 
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476247-a745f780-4370-11ea-930c-fe813ae3200b.png">
 <i>I like corgis</i></p>
 
-The side black bards you see in some images is because of the aspect ratio of the window of the game when i took the picture.
+<p align="center"><img src="https://user-images.githubusercontent.com/24371572/74969051-abf34e00-53fa-11ea-9448-d93621c3c9c2.png">
+<i>Image using a depth map</i></p>
+
+<p align="center"><img src="https://user-images.githubusercontent.com/24371572/74969102-b57cb600-53fa-11ea-81ad-6df4c1623e59.png">
+<i>Same image using cineDOF while mixing the depth map with the depth buffer</i></p>
+
+# <p align="center"><span style="color:#bb0044">FreezeShot</span></p>
+
+I noticed a lot of double exposure shots recently, and I thought shooting and putting the image in a layer shader must be a bummer, so I made a thing for that.
+
+Introducing FreezeShot, align the camera, adjust the depth of the subject you want to take the screenshot from and press the Freeze bool and uala! You can move and adjust it like any layer shader.
+
+It has the same controls as the StageDepthPlus. It also saves the depth buffer when you freeze the image, so you can make the layer interact with the scene.
+
+<p align="center"><img src="https://user-images.githubusercontent.com/24371572/74969164-caf1e000-53fa-11ea-8291-c80527ea385b.jpg">
+<i>Freezing and flipping the image</i></p>
+
+<p align="center"><img src="https://user-images.githubusercontent.com/24371572/74969112-b7df1000-53fa-11ea-8e5f-f6ab560317e9.png">
+<i>Frozen image using the saved depth to interact with the scene</i></p>
+
+
+# <p align="center"><span style="color:#bb0044">Flip</span></p>
+
+I cant take credit for this one since its a really easy shader Marty wrote in the reshade forums, I just added a couple of bools parameters to choose if you want to flip the image horizontally or vertically. I put it here since it can be useful for artistics proporses like the image below.
+
+<p align="center"><img src="https://user-images.githubusercontent.com/24371572/74970280-d6dea180-53fc-11ea-8ed6-7b9c6ff15004.png">
+<i>Flip shader with a couple of instance of CanvasMask</i></p>
+
+# <p align="center"><span style="color:#bb0044">Color Mask</span></p>
+
+As the title suggest its a shader for masking purposeses using colors as the target, or at least thats the idea. There are multiple files of the shader because i have taken different approches in every oportunity, without the desire effect. If you wanna try it i would suggest you to use the CanvasMask3.fx. Still in proggress, will update when i achieve the result that i want.
 
 # Things to do
+- Make the Color Mask shader work with color selection, saturation range and light range.
+- Make the shaders interface more user friendly
 - Fix the strip gradient dont mantaining the scale while changing the angle
 - Fix the diamond gradient to rotate with the modifications done in the x and y axes
 - Fix blending modes that clip some values
 - Fix the StageDepthPlus shader loading the image with square aspect ratio
 - Change the gradient to other color space
 - Work on the emphasize-type fog more
-- Add a color mask option to CanvasMask (or make it another shader)
 
 Any bug or suggestion you got dont hesitate in writting it down.

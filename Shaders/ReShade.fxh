@@ -1,6 +1,3 @@
-//Reshade.fxh with FakeDOF extension
-//Reshade.fxh source at https://github.com/crosire/reshade-shaders by crosire
-
 #pragma once
 
 #if !defined(__RESHADE__) || __RESHADE__ < 30000
@@ -19,8 +16,8 @@
 #ifndef RESHADE_DEPTH_LINEARIZATION_FAR_PLANE
     #define RESHADE_DEPTH_LINEARIZATION_FAR_PLANE 1000.0
 #endif
-#ifndef RESHADE_USE_FAKE_DEPTH
-    #define RESHADE_USE_FAKE_DEPTH 0
+#ifndef RESHADE_MIX_STAGE_DEPTH_PLUS_MAP
+    #define RESHADE_MIX_STAGE_DEPTH_PLUS_MAP 0
 #endif
 
 #define BUFFER_PIXEL_SIZE float2(BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT)
@@ -57,8 +54,8 @@ texture Test_Tex <
     source = "depthmap.png";
 > {
     Format = RGBA8;
-    Width  = 1024;
-    Height = 768;
+    Width  = 1920;
+    Height = 1080;
 };
 
 sampler Test_Sampler
@@ -71,8 +68,8 @@ sampler Test_Sampler
 
 
 
-#if RESHADE_USE_FAKE_DEPTH
-    #include "Imagedepthf.fxh";
+#if RESHADE_MIX_STAGE_DEPTH_PLUS_MAP
+    #include "StageDepthPlusMap.fxh";
     float GetLinearizedDepth(float2 texcoord)
     {
     float depthimage= saturate(tex2D(Test_Sampler,getValuesImageDepthMap(texcoord)).x-ImageDepth_offset);

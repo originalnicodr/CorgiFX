@@ -412,7 +412,7 @@ technique StageDepthPlus
 	#if __RESHADE__ >= 40000
 	< ui_tooltip = 
 			"If you want to have the depth map affecting the image and the depth buffer make\n"
-			"sure to change the RESHADE_USE_FAKE_DEPTH value to 1 in the\n"
+			"sure to change the RESHADE_MIX_STAGE_DEPTH_PLUS_MAP value to 1 in the\n"
 			"Edit global proccesor definitions section and change the values\n"
 			"from the Fake Depth buffer controls to match the ones in the shader.\n"; >
 	#endif

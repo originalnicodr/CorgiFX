@@ -60,13 +60,13 @@ uniform int BlendM <
 	ui_label = "Blending Mode";
 	ui_tooltip = "Select the blending mode used with the gradient on the screen.";
 	ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0Linear burn\0Linear dodge\0Vivid light\0Linearlight\0Pin light\0Hardmix\0Reflect\0Glow";
-	ui_category = "Gradient controls";
 > = 0;
 
 uniform float Stage_depth <
 	ui_type = "slider";
-	ui_min = 0.0; ui_max = 1.0;
+	ui_min = -1.0; ui_max = 1.0;
 	ui_label = "Layer Depth";
+	ui_tooltip = "If you want to use the depth from the frozen layer decrease this value";
 > = 0.97;
 
 
@@ -74,6 +74,12 @@ texture FreezeTexold		{ Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=RGB
 texture FreezeTexnew		{ Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=RGBA8;};
 sampler FreezeSamplernew		{ Texture = FreezeTexold; };
 sampler FreezeSamplerold		{ Texture = FreezeTexnew; };
+
+
+texture DepthTexold		{ Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=RGBA8;};
+texture DepthTexnew		{ Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=RGBA8;};
+sampler DepthSamplernew		{ Texture = DepthTexold; };
+sampler DepthSamplerold		{ Texture = DepthTexnew; };
 
 void GrabFrame(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float4 Image : SV_Target)
 {
@@ -90,6 +96,23 @@ void SaveFrame(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float4 
 {
 	// Grab the color selected 
 	Image = tex2D(FreezeSamplernew, UvCoord).rgba;
+}
+
+void GrabDepth(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float4 Image : SV_Target)
+{
+	// Grab the color selected
+    float depth = 1 - ReShade::GetLinearizedDepth(UvCoord).r;
+	if (!Freeze){
+        Image= float3(depth,depth,depth);
+        Image.a= (depth>=Shot_depth_far && depth<=Shot_depth_close) ? 1 : 0;
+        }
+    else{Image= tex2D(DepthSamplerold, UvCoord).rgba;}
+}
+
+void SaveDepth(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float4 Image : SV_Target)
+{
+	// Grab the color selected 
+	Image = tex2D(DepthSamplernew, UvCoord).rgba;
 }
 
 
@@ -325,7 +348,10 @@ void Freezef(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, o
 	const float4 layer     = tex2D(FreezeSamplernew, uvtemp).rgba;
 	float4 precolor   = lerp(backbuffer, layer, Stage_Opacity);
     //float4 color;
-	if( depth < Stage_depth )
+
+	float ImageDepthMap_depth = tex2D(DepthSamplernew,uvtemp).x;
+
+	if( depth < saturate(ImageDepthMap_depth+Stage_depth))
 	{   
         if (uvtemp.x>0 && uvtemp.x>0 && uvtemp.y>0 && uvtemp.y>0 && uvtemp.x<1 && uvtemp.x<1 && uvtemp.y<1 && uvtemp.y<1){
 		    switch (BlendM){
@@ -387,6 +413,16 @@ technique FreezeShot
 		VertexShader = PostProcessVS;
 		PixelShader = SaveFrame;
 		RenderTarget = FreezeTexnew;
+	}
+	pass GrabDepth{
+		VertexShader = PostProcessVS;
+		PixelShader = GrabDepth;
+		RenderTarget = DepthTexold;
+	}
+    pass SaveDepth{
+		VertexShader = PostProcessVS;
+		PixelShader = SaveDepth;
+		RenderTarget = DepthTexnew;
 	}
 
     pass
