@@ -129,7 +129,7 @@ It has the same controls as the StageDepthPlus. It also saves the depth buffer w
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/74969164-caf1e000-53fa-11ea-8291-c80527ea385b.jpg">
 <i>Freezing and flipping the image</i></p>
 
-<p align="center"><img src="https://user-images.githubusercontent.com/24371572/74969112-b7df1000-53fa-11ea-8e5f-f6ab560317e9.png">
+<p align="center"><img src="https://user-images.githubusercontent.com/24371572/74975605-12319e00-5406-11ea-850a-828c13f42636.png">
 <i>Frozen image using the saved depth to interact with the scene</i></p>
 
 
@@ -154,4 +154,4 @@ As the title suggest its a shader for masking purposeses using colors as the tar
 - Change the gradient to other color space
 - Work on the emphasize-type fog more
 
-Any bug or suggestion you got dont hesitate in writting it down.
+Any bug or suggestion you got don't hesitate in hitting me up.
