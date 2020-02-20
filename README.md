@@ -2,7 +2,7 @@
 
 Just shaders that i edit or make.
 
-I am new at writing shaders so please take that in mind while reading the code. Any code used from other shaders will be stated in the shader comments.
+I am new at writing shaders so please take that in mind while reading the code. Any code used from other shaders will be stated in the shader comments. If i forgot to mention someone please let me know.
 
 The side black bars you see in some images is because of the aspect ratio of the window of the game when i took the picture.
 
