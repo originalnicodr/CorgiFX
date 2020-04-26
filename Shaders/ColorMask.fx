@@ -1,11 +1,14 @@
-//Made by originalnicdor. Based in the ColorIsolation shader from Daodan317081.
-//Color convertion functions from xIddqDx, props to him
+//Made by originalnicdor. Heavely based in the ColorIsolation shader from Daodan317081, all kudos to him.
+//Color convertion functions from xIddqDx, props to him.
 
 
 	  ////////////
 	 /// MENU ///
 	////////////
 
+//If you want to use multiple instances of the shader you have to rename the namespace and the name of the technique
+namespace ColorMask
+{
 #include "ReShadeUI.fxh"
 
 /*uniform bool Colorp<
@@ -19,11 +22,29 @@
 #define COLORISOLATION_CATEGORY_SETUP "Setup"
 #define COLORISOLATION_CATEGORY_DEBUG "Debug"
 
+uniform bool axisColorSelectON <
+	ui_category = COLORISOLATION_CATEGORY_SETUP;
+	ui_label = "Use mouse-driven auto-focus";
+> = false;
+
+uniform bool drawColorSelectON <
+	ui_category = COLORISOLATION_CATEGORY_SETUP;
+	ui_label = "Draw some lines showing the color dropper position";
+> = false;
+
+uniform float2 axisColorSelectAxis <
+	ui_category = COLORISOLATION_CATEGORY_SETUP;
+	ui_label = "Take hue from pixel";
+	ui_type = "drag";
+	ui_step = 0.001;
+	ui_min = 0.000; ui_max = 1.000;
+> = float2(0.5, 0.5);
+
 uniform float fUITargetHueTwo <
     ui_type = "slider";
     ui_category = COLORISOLATION_CATEGORY_SETUP;
     ui_label = "Target Hue";
-    ui_tooltip = "Set the desired hue.\nEnable \"Show Debug Overlay\" for visualization.";
+    ui_tooltip = "Set the desired color.\nEnable \"Show Debug Overlay\" for visualization.";
     ui_min = 0.0; ui_max = 360.0; ui_step = 0.5;
 > = 0.0;
 
@@ -38,32 +59,16 @@ uniform float fUIOverlapTwo <
     ui_type = "slider";
     ui_category = COLORISOLATION_CATEGORY_SETUP;
     ui_label = "Hue Overlap";
-    ui_tooltip = "Changes the width of the curve\nto include less or more colors in relation\nto the target hue.\n";
+    ui_tooltip = "The likeness of the 'objective color'";
     ui_min = 0.001; ui_max = 2.0;
     ui_step = 0.001;
 > = 0.3;
-
-
-/*uniform float SaturationRange <
-	ui_category = COLORISOLATION_CATEGORY_SETUP;
-	ui_label = "Saturation Range";
-	ui_type = "slider";
-	ui_step = 0.001;
-	ui_min = 0; ui_max = 1;
-> = 0.0;
-
-uniform float BrigtnessRange <
-	ui_category = COLORISOLATION_CATEGORY_SETUP;
-	ui_label = "Brightness Range";
-	ui_type = "slider";
-	ui_step = 0.001;
-	ui_min = 0; ui_max = 1;
-> = 0.0;*/
 
 uniform float fUIWindowHeightTwo <
     ui_type = "slider";
     ui_category = COLORISOLATION_CATEGORY_SETUP;
     ui_label = "Curve Steepness";
+	ui_tooltip = "The brightness of the colors accepted by the mask";
     ui_min = 0.0; ui_max = 10.0;
     ui_step = 0.01;
 > = 1.0;
@@ -74,6 +79,14 @@ uniform int iUITypeTwo <
     ui_label = "Isolate / Reject Hue";
     ui_items = "Isolate\0Reject\0";
 > = 0;
+
+uniform float maskStrength <
+    ui_type = "slider";
+    ui_category = COLORISOLATION_CATEGORY_SETUP;
+    ui_label = "Mask Strngth";
+    ui_min = 0.0; ui_max = 1.0;
+    ui_step = 0.01;
+> = 1.0;
 
 uniform bool bUIShowDiffTwo <
     ui_category = COLORISOLATION_CATEGORY_DEBUG;
@@ -307,6 +320,16 @@ float3 hsl2rgb(float3 hsl)
 	return rgb; 
 }
 
+float3 RGBToHCV( in float3 RGB )
+{
+    // Based on work by Sam Hocevar and Emil Persson
+    float4 P         = ( RGB.g < RGB.b ) ? float4( RGB.bg, -1.0f, 2.0f/3.0f ) : float4( RGB.gb, 0.0f, -1.0f/3.0f );
+    float4 Q1        = ( RGB.r < P.x ) ? float4( P.xyw, RGB.r ) : float4( RGB.r, P.yzx );
+    float C          = Q1.x - min( Q1.w, Q1.y );
+    float H          = abs(( Q1.w - Q1.y ) / ( 6.0f * C + 0.000001f ) + Q1.z );
+    return float3( H, C, Q1.x );
+}
+
 
 
 
@@ -415,12 +438,24 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float3 f
 
 	float3 actual=tex2D(BeforeSampler, texcoord).rgb;
     const float3 luma = dot(actual, float3(0.2126, 0.7151, 0.0721)).rrr;
-    const float3 param = float3(fUITargetHueTwo / 360.0, fUIOverlapTwo, fUIWindowHeightTwo);
+
+	float3 param;
+
+	if (axisColorSelectON) {
+		float3 coloraxis = tex2D(BeforeSampler, axisColorSelectAxis).rgb;
+		//float3 coloraxis = tex2D(BeforeSampler, MouseCoords*ReShade::PixelSize).rgb;
+		coloraxis=RGBToHCV(coloraxis);
+		param = float3(coloraxis.x, fUIOverlapTwo, fUIWindowHeightTwo);
+	}
+	else{
+		param = float3(fUITargetHueTwo / 360.0, fUIOverlapTwo, fUIWindowHeightTwo);
+	}
+    
     float value = CalculateValueTwo(RGBtoHSVTwo(actual).x, param.z, param.x, 1.0 - param.y);
 	//float value2=distancespe4(RGBtoHSVTwo(actual), RGBtoHSVTwo(float3(255,0,0)),0,SaturationRange,BrigtnessRange);
 	//value2=FlipColorMask ? value2 : 1-value2;
 
-	fragment=lerp(actual,tex2D(ReShade::BackBuffer, texcoord).rgb, value);
+	fragment=lerp(actual,tex2D(ReShade::BackBuffer, texcoord).rgb, maskStrength*value);
 
     if(bUIShowDiffTwo)
         fragment = value.rrr;
@@ -429,6 +464,10 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float3 f
     {
         fragment = DrawDebugOverlayTwo(fragment, param, fUIOverlayPosTwo, iUIOverlaySizeTwo, fUIOverlayOpacityTwo, vpos.xy, texcoord);
     }
+
+	if(axisColorSelectON && drawColorSelectON){
+		fragment=lerp(fragment,float4(1.0, 0.0, 0.0, 1.0),(abs(texcoord.x - axisColorSelectAxis.x)<0.0005 || abs(texcoord.y - axisColorSelectAxis.y)<0.001 ) ? 1 : 0);
+	}
 
 }
 
@@ -475,4 +514,6 @@ technique AfterColorMask < ui_tooltip = "Place this technique after effects you 
 		VertexShader = PostProcessVS;
 		PixelShader = AfterPS;
 	}
+}
+
 }
