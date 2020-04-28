@@ -142,7 +142,39 @@ I cant take credit for this one since its a really easy shader Marty wrote in th
 
 # <p align="center"><span style="color:#bb0044">Color Mask</span></p>
 
-As the title suggest its a shader for masking purposeses using colors as the target, or at least thats the idea. There are multiple files of the shader because i have taken different approches in every oportunity, without the desire effect. If you wanna try it i would suggest you to use the CanvasMask3.fx. Still in proggress, will update when i achieve the result that i want.
+As the title suggest its a shader for masking purposeses using colors as the target. My intention was to imitate the "Color Range" selection function from Photoshop, so if you are familiar with that you shouldnt have much trouble using it. The shader is based on the Color Isolation shader from Daodan, so all credits goes to him.
+
+## Features
+
+- **Target Hue**: You can select the color you want with a variable or with a eyedropper.
+- **Hue Overlap**: The bigger the number the lesser the amount of colors being masked. Think of it as controlling how close does the colors need to be in order to be accepted.
+- **Curve Steepness**: The brigthness of the colors not being masked.
+- **Accept / Reject Colors**: Once you have the objetive color seted up you can either mask all colors except the onces selected or vice versa.
+- **Mask Strength**: Just a way to control the opacity of the shader.
+- **Debug tools**: If you want to see exactly what you are masking the shader offers two debug tools:
+    - **Hue Difference**: Shows a grey-scale image allowing you to see the part of the screen that is being accepted.
+    - **Debug Overlay**: Show a color table with a black line that points out the colors being masked.
+Both of these debugs options were made by Daodan and are quite useful, would suggest you to use them.
+- **Highlights and Shadows selection**: As the "Color Range" function in Photoshop you can use this to mask shadows independetly of the hue, and if you use the "Reject Colors" option you can mask highlights.
+
+## Some example images
+
+<p align="center"><img src="https://user-images.githubusercontent.com/24371572/80437802-03210d80-88d9-11ea-943f-5dc5ce9b50b2.png">
+<i>Original scene</i></p>
+
+<p align="center"><img src="https://user-images.githubusercontent.com/24371572/80437789-fb616900-88d8-11ea-9e03-3f81c2f974c0.png">
+<i>HueFx shader applied while masking all colors except blue</i></p>
+
+<p align="center"><img src="https://user-images.githubusercontent.com/24371572/80437811-0a481b80-88d9-11ea-9abd-fe60bb7a586d.png">
+<i>Using the eyedropper to sample a color from the screen, again with the HueFX shader</i></p>
+
+<p align="center"><img src="https://user-images.githubusercontent.com/24371572/80437825-116f2980-88d9-11ea-98ea-8c3859d4a550.png">
+<i>Using the "hue difference" debugging option while using the "Lineal" windows option to accept shadows in the mask</i></p>
+
+<p align="center"><img src="https://user-images.githubusercontent.com/24371572/80437832-146a1a00-88d9-11ea-978b-8c17c18d3658.png">
+<i>Masking highlights using thed HueFX shader</i></p>
+
+I think the result is pretty close to what photoshop does, if you are masking shadows or highlights dont be afraid of using values outsides of the boundries (Control + click) in the "Fuzzines" and "Curve Steepness" variables, still have figure that out, but its quite usable.
 
 # Things to do
 - Make the Color Mask shader work with color selection, saturation range and light range.
