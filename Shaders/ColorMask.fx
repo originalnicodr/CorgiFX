@@ -16,7 +16,7 @@ namespace ColorMask
 
 uniform bool axisColorSelectON <
 	ui_category = COLORISOLATION_CATEGORY_SETUP;
-	ui_label = "Use the color eyedropper instead of HUE selection";
+	ui_label = "Use the color eyedropper instead of 'Target HUE'";
 > = false;
 
 uniform bool drawColorSelectON <
@@ -44,7 +44,7 @@ uniform int cUIWindowFunctionTwo <
     ui_type = "combo";
     ui_category = COLORISOLATION_CATEGORY_SETUP;
     ui_label = "Window Function";
-    ui_items = "Gauss\0Triangle\0";
+    ui_items = "Gauss\0Triangle\0Lineal(for highlights and shadows selection)\0";
 > = 0;
 
 uniform float fUIOverlapTwo <
@@ -54,28 +54,37 @@ uniform float fUIOverlapTwo <
     ui_tooltip = "The likeness of the 'objective color'";
     ui_min = 0.001; ui_max = 2.0;
     ui_step = 0.001;
-> = 0.3;
+> = 1.7;
 
 uniform float fUIWindowHeightTwo <
     ui_type = "slider";
     ui_category = COLORISOLATION_CATEGORY_SETUP;
     ui_label = "Curve Steepness";
-	ui_tooltip = "The brightness of the colors accepted by the mask";
+	ui_tooltip = "The brightness of the colors accepted by the mask\nTip: Change this to 0 for neutral brigthness in Lineal mode";
     ui_min = 0.0; ui_max = 10.0;
     ui_step = 0.01;
 > = 1.0;
 
+uniform float fuzzines <
+    ui_type = "slider";
+    ui_category = COLORISOLATION_CATEGORY_SETUP;
+    ui_label = "Fuzzines (only for lineal function)";
+	ui_tooltip = "Similar to the Fuzzines option in the Color Range selection option in photoshop";
+    ui_min = 0; ui_max = 1.0;
+    ui_step = 0.01;
+> = 0;
+
 uniform int iUITypeTwo <
     ui_type = "combo";
     ui_category = COLORISOLATION_CATEGORY_SETUP;
-    ui_label = "Isolate / Reject Hue";
-    ui_items = "Isolate\0Reject\0";
+    ui_label = "Accept / Reject Colors";
+    ui_items = "Accept\0Reject\0";
 > = 0;
 
 uniform float maskStrength <
     ui_type = "slider";
     ui_category = COLORISOLATION_CATEGORY_SETUP;
-    ui_label = "Mask Strngth";
+    ui_label = "Mask Strength";
     ui_min = 0.0; ui_max = 1.0;
     ui_step = 0.01;
 > = 1.0;
@@ -117,8 +126,6 @@ uniform float fUIOverlayOpacityTwo <
 
 // First pass render target
 texture BeforeTarget { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; };
-texture Texture1		{ Width = 1; Height = 1;};		// for storing the new color value
-texture Texture2		{ Width = 1; Height = 1;};		// for storing the old color value
 sampler BeforeSampler { Texture = BeforeTarget; };
 
 
@@ -180,6 +187,15 @@ float3 HSVtoRGBTwo(float3 c) {
     return c.z * lerp(K.xxx, saturate(p - K.xxx), c.y);
 }
 
+float3 RGBToHSL( in float3 RGB )
+{
+    RGB.xyz          = max( RGB.xyz, 0.000001f );
+    float3 HCV       = RGBToHCV(RGB);
+    float L          = HCV.z - HCV.y * 0.5f;
+    float S          = HCV.y / ( 1.0f - abs( L * 2.0f - 1.0f ) + 0.000001f);
+    return float3( HCV.x, S, L );
+}
+
 float MapTwo(float value, float2 span_old, float2 span_new) {
 	float span_old_diff;
     if (abs(span_old.y - span_old.x) < 1e-6)
@@ -191,18 +207,28 @@ float MapTwo(float value, float2 span_old, float2 span_new) {
 
 #define GAUSS(x,height,offset,overlap) (height * exp(-((x - offset) * (x - offset)) / (2 * overlap * overlap)))
 #define TRIANGLE(x,height,offset,overlap) saturate(height * ((2 / overlap) * ((overlap / 2) - abs(x - offset))))
+#define LINEAL(x,height,offset,overlap) RGBToHSL(actual)
 
 float CalculateValueTwo(float x, float height, float offset, float overlap) {
     float retVal;
     //Add three curves together, two of them are moved by 1.0 to the left and to the right respectively
     //in order to account for the borders at 0.0 and 1.0
-    if(cUIWindowFunctionTwo == 0) {
-        //Scale overlap so the gaussian has roughly the same span as the triangle
-        overlap /= 5.0;
-        retVal = saturate(GAUSS(x-1.0, height, offset, overlap) + GAUSS(x, height, offset, overlap) + GAUSS(x+1.0, height, offset, overlap));
-    }
-    else {
-        retVal = saturate(TRIANGLE(x-1.0, height, offset, overlap) + TRIANGLE(x, height, offset, overlap) + TRIANGLE(x+1.0, height, offset, overlap));
+
+    switch (cUIWindowFunctionTwo){
+        case 0:{
+            //Scale overlap so the gaussian has roughly the same span as the triangle
+            overlap /= 5.0;
+            retVal = saturate(GAUSS(x-1.0, height, offset, overlap) + GAUSS(x, height, offset, overlap) + GAUSS(x+1.0, height, offset, overlap));
+            break;
+        }
+        case 1:{
+            retVal = saturate(TRIANGLE(x-1.0, height, offset, overlap) + TRIANGLE(x, height, offset, overlap) + TRIANGLE(x+1.0, height, offset, overlap));
+            break;
+        }
+        case 2:{
+            retVal=fUIWindowHeightTwo/10;//not really useful
+            break;
+        }
     }
     
     if(iUITypeTwo == 1)
@@ -223,6 +249,7 @@ float3 DrawDebugOverlayTwo(float3 background, float3 param, float2 pos, int2 siz
         y = MapTwo(texcoord.y, float2(overlayPos.y, overlayPos.y + size.y) / BUFFER_HEIGHT, float2(0.0, 1.0));
         hsvStrip = HSVtoRGBTwo(float3(x, 1.0, 1.0));
         luma = dot(hsvStrip, float3(0.2126, 0.7151, 0.0721));
+
         value = CalculateValueTwo(x, param.z, param.x, 1.0 - param.y);
         overlay = lerp(luma.rrr, hsvStrip, value);
         overlay = lerp(overlay, 0.0.rrr, exp(-size.y * length(float2(x, 1.0 - y) - float2(x, value))));
@@ -230,6 +257,12 @@ float3 DrawDebugOverlayTwo(float3 background, float3 param, float2 pos, int2 siz
     }
 
     return background;
+}
+
+float border(float x, float c){
+    if (x<=0.5-c) return 0;
+    if (x>=0.5+c) return 1;
+    return x;
 }
 
 void BeforePS(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 Image : SV_Target)
@@ -254,7 +287,34 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float3 f
 		param = float3(fUITargetHueTwo / 360.0, fUIOverlapTwo, fUIWindowHeightTwo);
 	}
     
-    float value = CalculateValueTwo(RGBtoHSVTwo(actual).x, param.z, param.x, 1.0 - param.y);
+    float value;
+
+
+
+    switch(cUIWindowFunctionTwo){
+        case 2:{
+            
+            if(iUITypeTwo == 1){
+                //value=saturate(border(RGBToHSL(actual).z,fUIOverlapTwo/4)+(10-fUIWindowHeightTwo*2)/10);
+                //value=saturate(((RGBToHSL(actual).z > fuzzines) ? RGBToHSL(actual).z : 0) +(10-fUIWindowHeightTwo*2)/10);
+                value=saturate((fuzzines*20*(pow(2,RGBToHSL(actual).z)-1)+ (1-fuzzines*20)*RGBToHSL(actual).z)*(exp(fUIWindowHeightTwo/3.5)));
+                value=1-value;
+            }
+            else value=saturate((fuzzines*20*(pow(2,RGBToHSL(actual).z)-1)+ (1-fuzzines*20)*RGBToHSL(actual).z)*(exp(fUIWindowHeightTwo/3.5)));
+            //value=saturate(fuzzines*20*(pow(2,RGBToHSL(actual).z)-1)+ (1-fuzzines*20)*RGBToHSL(actual).z);
+            //value=saturate(((RGBToHSL(actual).z > fuzzines) ? RGBToHSL(actual).z : 0) -(10-fUIWindowHeightTwo*2)/10);
+            //value=saturate(((1.0157 * (fUIOverlapTwo)) / (1 * (1.0157 - fUIOverlapTwo+1)) * (RGBToHSL(actual).z  - 0.5) + 0.5)-(10-fUIWindowHeightTwo*2)/10);
+            //value=saturate(border(RGBToHSL(actual).z,fUIOverlapTwo/4)-(10-fUIWindowHeightTwo*2)/10);
+            break;
+        }
+        default:{
+            value=CalculateValueTwo(RGBtoHSVTwo(actual).x, param.z, param.x, 1.0 - param.y);
+            break;
+        }
+    }
+
+
+
 
 	fragment=lerp(actual,tex2D(ReShade::BackBuffer, texcoord).rgb, maskStrength*value);
 
