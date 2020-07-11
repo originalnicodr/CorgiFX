@@ -275,6 +275,12 @@ uniform float EffectFactor <
 	ui_tooltip = "Specifies the factor the blending is applied. Range from 0.0, which means the effect is off (normal image), till 1.0 which means the blended parts are\nfull blended";
 > = 0.9;
 
+uniform bool ShowDebug <
+    //ui_category = ;
+    ui_label = "Debug view";
+	ui_tooltip = "Show the mask in grey tones.";
+> = false;
+
 #ifndef M_PI
 	#define M_PI 3.1415927
 #endif
@@ -374,7 +380,12 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float4 f
 	        float angulo=radians(Axis);
             uvtest = float2(cos(angulo) * uvtest.x-sin(angulo)*uvtest.y, sin(angulo)*uvtest.y +cos(angulo)*uvtest.x)+Offset;
 	        float gradient= (Scale<0) ? saturate(uvtest.x*(-pow(2,abs(Scale)))+Offset): saturate(uvtest.x*pow(2,abs(Scale))+Offset);
-	        fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, tex2D(ReShade::BackBuffer, texcoord).rgb, fogFactor*lerp(AlphaA, AlphaB, gradient));break;
+	        fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, tex2D(ReShade::BackBuffer, texcoord).rgb, fogFactor*lerp(AlphaA, AlphaB, gradient));
+			
+			if (ShowDebug){
+				fragment=fogFactor*lerp(AlphaA, AlphaB, saturate(gradient));
+			}
+			break;
         }
         case 1:{
 			float distfromcenter=distance(float2(Originc.x*Modifierc.x, Originc.y*Modifierc.y), float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT)*Modifierc.x,texcoord.y*Modifierc.y));
@@ -382,13 +393,24 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float4 f
 			float2 uvtemp=float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),texcoord.y);
 			float dist2 = distance(Originc*Modifierc,rotate(uvtemp,Originc,angulo)*Modifierc);
 			float gradient=(Scale<0) ? saturate((dist2-Size)*(-pow(2,abs(Scale)))) : saturate((dist2-Size)*(pow(2,abs(Scale))));
-			fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, tex2D(ReShade::BackBuffer, texcoord).rgb, fogFactor*lerp(AlphaA, AlphaB, gradient));break;
+			fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, tex2D(ReShade::BackBuffer, texcoord).rgb, fogFactor*lerp(AlphaA, AlphaB, gradient));
+			
+			if (ShowDebug){
+				fragment=fogFactor*lerp(AlphaA, AlphaB, saturate(gradient));
+			}
+
+			break;
         }
         case 2:{
             float2 ubs = texcoord;
 			ubs.y = 1.0 - ubs.y;
 			float gradient = saturate((DistToLine(PositionS, float2(PositionS.x-sin(radians(AnguloS)),PositionS.y-cos(radians(AnguloS))), ubs) * 2.0)*(pow(2,Scale+2))-SizeS);
-			fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, tex2D(ReShade::BackBuffer, texcoord).rgb, fogFactor*lerp(AlphaA, AlphaB, gradient));break;
+			fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, tex2D(ReShade::BackBuffer, texcoord).rgb, fogFactor*lerp(AlphaA, AlphaB, gradient));
+			
+			if (ShowDebug){
+				fragment=fogFactor*lerp(AlphaA, AlphaB, saturate(gradient));
+			}
+			break;
         }
 		case 3:{
 			float angle=radians(Angulod);
@@ -407,7 +429,12 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float4 f
 			//funca sin modificadores
 			//float2 uv=rotate(float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT)*Modifierd.x,texcoord.y*Modifierd.y),Origind,angle);
 			//float gradient = 1 - pow(max(abs((uv.x - Origind.x)/Sized), abs((uv.y - Origind.y)/Sized)),exp(Scale));
-			fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, tex2D(ReShade::BackBuffer, texcoord).rgb, fogFactor*lerp(AlphaA, AlphaB, saturate(gradient)));break;
+			fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, tex2D(ReShade::BackBuffer, texcoord).rgb, fogFactor*lerp(AlphaA, AlphaB, saturate(gradient)));
+
+			if (ShowDebug){
+				fragment=fogFactor*lerp(AlphaA, AlphaB, saturate(gradient));
+			}
+			break;
 		}
     }
 }
