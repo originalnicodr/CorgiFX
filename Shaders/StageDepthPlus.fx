@@ -119,7 +119,15 @@ namespace StageDepthPlus
 	//////////////////////////////////////
 	// textures
 	//////////////////////////////////////
+	#if ((3*BUFFER_WIDTH <= 8192) && (3*BUFFER_WIDTH <= 8192))
+	texture Stageplus_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH*3; Height = BUFFER_HEIGHT*3; Format=TEXFORMAT; };
+	#else
+	#if ((2*BUFFER_WIDTH <= 8192) && (2*BUFFER_WIDTH <= 8192))
+	texture Stageplus_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH*2; Height = BUFFER_HEIGHT*2; Format=TEXFORMAT; };
+	#else
 	texture Stageplus_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=TEXFORMAT; };
+	#endif
+	#endif
 
 	//////////////////////////////////////
 	// samplers
