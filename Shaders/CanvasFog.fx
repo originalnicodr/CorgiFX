@@ -68,7 +68,7 @@ uniform int BlendM <
 uniform float Scale < 
 	ui_label = "Gradient sharpness";
 	ui_type = "slider";
-	ui_min = -10.0; ui_max = 10.0; ui_step = 0.01;
+	ui_min = -10.0; ui_max = 10.0; ui_step = 0.0001;
 	ui_category = "Gradient controls";
 > = 1.0;
 
@@ -78,6 +78,10 @@ uniform float Axis <
 	ui_step = 0.1;
 	ui_min = -180.0; ui_max = 180.0;
 	ui_category = "Linear gradient control";
+//#if (GradientType == 0)
+ui_category_closed = false;
+//#else
+//ui_category_closed = true;
 > = 0.0;
 
 uniform float Offset < 
@@ -230,7 +234,7 @@ uniform float BloomPower <
 	ui_step = 0.1;
 	ui_tooltip = "Strength of the bloom";
 	ui_category = "AdaptiveFog-Bloom controls";
-> = 10.0;
+> = 0.0; //prev 10
 
 uniform float BloomWidth <
 	ui_type = "slider";
@@ -319,6 +323,23 @@ uniform float EffectFactor <
 	ui_tooltip = "Specifies the factor the blending is applied. Range from 0.0, which means the effect is off (normal image), till 1.0 which means the blended parts are\nfull blended";
 	ui_category = "EmphasizeFog controls";
 > = 0.9;
+
+
+
+uniform float2 FogRotationAngle  <
+    ui_label = "Angle of fog rotation";
+	ui_type = "slider";
+	ui_min = -1; ui_max = 1; ui_step = 0.01;
+	ui_category = "Fog Rotation (experimental)";
+> = float2(0, 0);
+
+uniform float2 FogRotationCenter  <
+    ui_label = "Center of rotation";
+	ui_type = "slider";
+	ui_min = 0; ui_max = 1;
+	ui_category = "Fog Rotation (experimental)";
+> = float2(0.5, 0.5);
+
 
 
 #ifndef M_PI
@@ -678,8 +699,13 @@ void PS_Otis_Original_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 
 	const float depth = ReShade::GetLinearizedDepth(texcoord).r;
 	float fogFactor;
 	switch(FogType){
+		//case 0:{
+		//	fogFactor=clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor);break;
+		//}
 		case 0:{
-			fogFactor=clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor);break;
+			//fogFactor=clamp(saturate(-(texcoord.x+FogRotationCenter.x-0.5)*sin(radians(FogRotationAngle.x))-(texcoord.y+FogRotationCenter.y-0.5)*sin(radians(FogRotationAngle.y)) + depth - FogStart) * FogCurve, 0.0, MaxFogFactor);break;
+			//fogFactor= clamp(saturate(-(texcoord.x-FogRotationCenter.x)*sin(radians(FogRotationAngle.x))-(texcoord.y-FogRotationCenter.y)*sin(radians(FogRotationAngle.y)) + depth - FogStart) * FogCurve, 0.0, MaxFogFactor);break;
+			fogFactor= clamp(saturate(-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y + depth - FogStart) * FogCurve, 0.0, MaxFogFactor);break;
 		}
 		case 1:{
 			fogFactor= 1-CalculateDepthDiffCoC(texcoord.xy);break;

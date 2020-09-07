@@ -69,6 +69,11 @@ uniform float Stage_depth <
 	ui_tooltip = "If you want to use the depth from the frozen layer decrease this value";
 > = 0.97;
 
+uniform bool BlackBackground < 
+	ui_label = "Black Background";
+	ui_tooltip = "If you are using this shader for hotsampling purposes turning this on might make the process easier";
+> = false;
+
 
 texture FreezeTexold		{ Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=RGBA8;};
 texture FreezeTexnew		{ Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=RGBA8;};
@@ -345,9 +350,13 @@ void Freezef(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, o
     if (FlipV) {uvtemp.y = 1-uvtemp.y;} //vertical flip
 	uvtemp=float2(((uvtemp.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),uvtemp.y);
     uvtemp=(rotate(uvtemp,Layer_Posreal+0.5,radians(Axis))*Layer_Scalereal-((Layer_Posreal+0.5)*Layer_Scalereal-0.5));
-	const float4 layer     = tex2D(FreezeSamplernew, uvtemp).rgba;
+	float4 layer     = tex2D(FreezeSamplernew, uvtemp).rgba;
+
+	//layer.a=BlackBackground ? 1 : layer.a;
+
 	float4 precolor   = lerp(backbuffer, layer, Stage_Opacity);
     //float4 color;
+	color=backbuffer;
 
 	float ImageDepthMap_depth = tex2D(DepthSamplernew,uvtemp).x;
 
@@ -381,6 +390,9 @@ void Freezef(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, o
 				case 23:{color = lerp(backbuffer, Glow(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
 		    }
         }
+		else {
+			if (BlackBackground) color= float4(0,0,0,0);
+		}
 	}
 	color.a = backbuffer.a;
     //return color;
