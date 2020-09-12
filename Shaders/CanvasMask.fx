@@ -72,6 +72,7 @@ uniform float Size <
 	ui_type = "slider";
 	ui_step = 0.002;
 	ui_min = 0.0; ui_max = 1.0;
+	ui_category_closed = true;
 > = 0.0;
 
 uniform float2 Originc <
@@ -104,6 +105,7 @@ uniform float SizeS <
 	ui_type = "slider";
 	ui_step = 0.001;
 	ui_min = 0; ui_max = 100;
+	ui_category_closed = true;
 > = 0.0;
 
 uniform float2 PositionS <
@@ -130,6 +132,7 @@ uniform float Sized <
 	ui_step = 0.002;
 	ui_min = 0.0; ui_max = 7.0;
 	ui_category = "Diamond gradient control";
+	ui_category_closed = true;
 > = 0.0;
 
 uniform float2 Origind <
@@ -163,6 +166,7 @@ uniform int FogType <
 	ui_type = "combo";
 	ui_category = "Fog controls";
 	ui_items = "Adaptive Fog\0Emphasize Fog\0";
+	ui_category_closed = true;
 > = false;
 
 uniform bool FlipFog <
@@ -203,6 +207,7 @@ uniform float FocusDepth <
 	ui_step = 0.001;
 	ui_min = 0.000; ui_max = 1.000;
 	ui_tooltip = "Manual focus depth of the point which has the focus. Range from 0.0, which means camera is the focus plane, till 1.0 which means the horizon is focus plane.";
+	ui_category_closed = true;
 > = 0.180;
 
 uniform float FocusRangeDepth <

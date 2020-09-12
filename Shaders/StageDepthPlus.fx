@@ -2,8 +2,8 @@
 
 //If you want to have multiple instances of StageDepthPlus you will have to change the following lines in every copy of the shader:
 //- Line 43: change "StageDepthPlus" to anything else (any namespace that you arent using in other shader).
-//- Line 52: change the "Stageplus.png" name file for the name of the image you want to use in this instance
-//- Line 417: change the name of the technique
+//- Line 54: change the "Stageplus.png" name file for the name of the image you want to use in this instance
+//- Line 425: change the name of the technique
 
 // Made by Marot Satil for the GShade ReShade package!
 // You can follow me via @MarotSatil on Twitter, but I don't use it all that much.

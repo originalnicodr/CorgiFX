@@ -78,10 +78,7 @@ uniform float Axis <
 	ui_step = 0.1;
 	ui_min = -180.0; ui_max = 180.0;
 	ui_category = "Linear gradient control";
-//#if (GradientType == 0)
-ui_category_closed = false;
-//#else
-//ui_category_closed = true;
+	//ui_spacing = 5;
 > = 0.0;
 
 uniform float Offset < 
@@ -98,6 +95,7 @@ uniform float Size <
 	ui_step = 0.002;
 	ui_min = 0.0; ui_max = 1.0;
 	ui_category = "Radial gradient control";
+	ui_category_closed = true;
 > = 0.0;
 
 uniform float2 Originc <
@@ -130,6 +128,7 @@ uniform float SizeS <
 	ui_type = "slider";
 	ui_step = 0.001;
 	ui_min = 0; ui_max = 100;
+	ui_category_closed = true;
 > = 0.0;
 
 uniform float2 PositionS <
@@ -156,6 +155,7 @@ uniform float Sized <
 	ui_step = 0.002;
 	ui_min = 0.0; ui_max = 7.0;
 	ui_category = "Diamond gradient control";
+	ui_category_closed = true;
 > = 0.0;
 
 uniform float2 Origind <
@@ -189,6 +189,7 @@ uniform int FogType <
 	ui_label = "Fog type";
 	ui_category = "Fog controls";
 	ui_items = "Adaptive Fog\0Emphasize Fog\0";
+	ui_category_closed = true;
 > = false;
 
 uniform bool FlipFog <
@@ -226,6 +227,7 @@ uniform float BloomThreshold <
 	ui_step = 0.1;
 	ui_tooltip = "Threshold for what is a bright light (that causes bloom) and what isn't.";
 	ui_category = "AdaptiveFog-Bloom controls";
+	ui_category_closed = true;
 > = 10.25;
 
 uniform float BloomPower <
@@ -249,6 +251,7 @@ uniform float FocusDepth <
 	ui_step = 0.001;
 	ui_tooltip = "Manual focus depth of the point which has the focus. Range from 0.0, which means camera is the focus plane, till 1.0 which means the horizon is focus plane.";
 	ui_category = "EmphasizeFog controls";
+	ui_category_closed = true;
 > = 0.026;
 
 uniform float FocusRangeDepth <
@@ -640,7 +643,7 @@ float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
 {
 	const float scenedepth = ReShade::GetLinearizedDepth(texcoord);
 	const float scenefocus =  FocusDepth;
-	const float desaturateFullRange = FocusRangeDepth+FocusEdgeDepth;
+	const float desaturateFullRange = FocusRangeDepth*FocusEdgeDepth;//used + before
 	float depthdiff;
 	
 	if(Spherical == true)
@@ -850,8 +853,15 @@ void PS_Otis_Original_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 
 			//fogFactor= clamp(saturate(-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y + depth*(noise) - FogStart) * FogCurve, 0.0, MaxFogFactor+depth);
 			//fogFactor= clamp(saturate(-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y + depth - FogStart) * FogCurve, 0.0, saturate(MaxFogFactor+depth));//MaxFogFactor);
 
-			fogFactor= clamp((-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y + depth - FogStart) * FogCurve, 0.0, saturate(MaxFogFactor+depth));//MaxFogFactor);
+			fogFactor= clamp((-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y+depth - FogStart) * FogCurve, 0.0, saturate(MaxFogFactor+depth));//MaxFogFactor);
 
+			//fogFactor = clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor); //original adaptive fog
+			//fogFactor=(1-depth*texcoord.y);
+
+			//fogFactor=depth>texcoord.y/5 ? 1 : 0;
+
+			//fogFactor=saturate(1-exp(-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y-100 * depth)); //tiene que ser negativo el FogRotationCenter.x (que estoy usando de sigma)
+			//fogFactor=1-exp(0.000001* saturate(depth - FogStart));
 			//fogFactor= 1-(texcoord.x/100<depth ? 0:1);//MaxFogFactor);
 
 

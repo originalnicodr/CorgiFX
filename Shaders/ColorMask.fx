@@ -16,12 +16,13 @@ namespace ColorMask
 
 uniform bool axisColorSelectON <
 	ui_category = COLORISOLATION_CATEGORY_SETUP;
-	ui_label = "Use the color eyedropper instead of 'Target HUE'";
+	ui_label = "Color eyedropper instead of 'Target HUE'";
 > = false;
 
 uniform bool drawColorSelectON <
 	ui_category = COLORISOLATION_CATEGORY_SETUP;
-	ui_label = "Draw some lines showing the color eyedropper position";
+	ui_label = "Draw color eyedropper position";
+    ui_tooltip = "Only visible if the eyedropper is used";
 > = false;
 
 uniform float2 axisColorSelectAxis <
@@ -31,6 +32,12 @@ uniform float2 axisColorSelectAxis <
 	ui_step = 0.001;
 	ui_min = 0.000; ui_max = 1.000;
 > = float2(0.5, 0.5);
+
+uniform bool MaskAfterEffects <
+	ui_category = COLORISOLATION_CATEGORY_SETUP;
+    ui_label = "Mask after effects are applied";
+	ui_tooltip = "Mask the colors afters the effects are applied, instead of before";
+> = false;
 
 uniform float fUITargetHueTwo <
     ui_type = "slider";
@@ -51,7 +58,7 @@ uniform float fUIOverlapTwo <
     ui_type = "slider";
     ui_category = COLORISOLATION_CATEGORY_SETUP;
     ui_label = "Hue Overlap";
-    ui_tooltip = "The likeness of the 'objective color'";
+    ui_tooltip = "Grow the amount of colors being masked around the desired hue";
     ui_min = 0.001; ui_max = 2.0;
     ui_step = 0.001;
 > = 1.7;
@@ -273,7 +280,7 @@ void BeforePS(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 I
 
 void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float3 fragment : SV_Target)
 {
-	float3 actual=tex2D(BeforeSampler, texcoord).rgb;
+	float3 actual=MaskAfterEffects ? tex2D(ReShade::BackBuffer, texcoord).rgb : tex2D(BeforeSampler, texcoord).rgb;
     const float3 luma = dot(actual, float3(0.2126, 0.7151, 0.0721)).rrr;
 
 	float3 param;
@@ -336,7 +343,7 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float3 f
 	 /// OUTPUT ///
 	//////////////
 
-technique BeforeColorMask < ui_tooltip = "Place this technique before effects you want compare.\nThen move technique 'After'"; >
+technique BeforeColorMask < ui_tooltip = "Place this technique before the shaders you want to mask"; >
 {
 	pass
 	{
@@ -345,7 +352,7 @@ technique BeforeColorMask < ui_tooltip = "Place this technique before effects yo
 		RenderTarget = BeforeTarget;
 	}
 }
-technique AfterColorMask < ui_tooltip = "Place this technique after effects you want compare.\nThen move technique 'Before'"; >
+technique AfterColorMask < ui_tooltip = "Place this technique after the shaders you want to mask"; >
 {
 	pass
 	{
