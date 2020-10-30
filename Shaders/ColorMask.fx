@@ -334,7 +334,7 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float3 f
     }
 
 	if(axisColorSelectON && drawColorSelectON){
-		fragment=lerp(fragment,float4(1.0, 0.0, 0.0, 1.0),(abs(texcoord.x - axisColorSelectAxis.x)<0.0005 || abs(texcoord.y - axisColorSelectAxis.y)<0.001 ) ? 1 : 0);
+		fragment=lerp(fragment,float3(1.0, 0.0, 0.0),(abs(texcoord.x - axisColorSelectAxis.x)<0.0005 || abs(texcoord.y - axisColorSelectAxis.y)<0.001 ) ? 1 : 0);
 	}
 
 }

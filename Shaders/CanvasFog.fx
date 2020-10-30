@@ -670,7 +670,7 @@ float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
 //Function used to blend the gradients and the screen
 float3 Blender(float3 CA, float3 CB, float2 texcoord, float gradient, float fogFactor){
 	float3 fragment = tex2D(ReShade::BackBuffer, texcoord).rgb;
-	float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord), lerp(tex2D(Otis_BloomSampler, texcoord), lerp(CA.rgb, CB.rgb, Flip ? 1 - gradient : gradient), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));
+	float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord).rgb, lerp(tex2D(Otis_BloomSampler, texcoord).rgb, lerp(CA.rgb, CB.rgb, Flip ? 1 - gradient : gradient), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));
 	switch (BlendM){
 		case 0:{fragment=prefragment;break;}
 		case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
@@ -881,8 +881,8 @@ void PS_Otis_Original_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 
 	if (FlipFog) {fogFactor = 1-clamp(saturate(depth - FogStart) * FogCurve, 0.0, 1-MaxFogFactor);}
 
 	//Takes the color sampled or the one from the color picker
-	float3 ColorAreal= ColorpA ? tex2D (ColorAsavernew, float2(0,0)).rgb : ColorA;
-	float3 ColorBreal= ColorpB ? tex2D (ColorBsavernew, float2(0,0)).rgb : ColorB;
+	float3 ColorAreal= ColorpA ? tex2D(ColorAsavernew, float2(0,0)).rgb : ColorA.rgb;
+	float3 ColorBreal= ColorpB ? tex2D(ColorBsavernew, float2(0,0)).rgb : ColorB.rgb;
 	
 	switch (GradientType){
 		case 0: {
