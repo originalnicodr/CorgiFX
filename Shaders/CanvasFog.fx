@@ -375,11 +375,9 @@ float3 Lighten(float3 LayerA, float3 LayerB)
 float3 ColorDodge(float3 LayerA, float3 LayerB)
 { return LayerB>=1.0f ? LayerB:saturate(LayerA/(1.0f-LayerB));}
 
-
 // Color Burn blending mode (by prod80)
 float3 ColorBurn(float3 LayerA, float3 LayerB)
 { return LayerB<=0.0f ? LayerB:saturate(1.0f-((1.0f-LayerA)/LayerB)); }
-//{ return (LayerB.r > 0 && LayerB.g > 0 && LayerB.b > 0) ? 1.0-min(1.0,(1.0-LayerA)/LayerB) : 0;}
 
 // Hard light blending mode
 float3 HardLight(float3 LayerA, float3 LayerB)
@@ -401,9 +399,9 @@ float3 Difference(float3 LayerA, float3 LayerB)
 float3 Exclusion(float3 LayerA, float3 LayerB)
 { return LayerA+LayerB-2*LayerA*LayerB; }
 
-// Overlay blending mode
-float3 Overlay(float3 LayerA, float3 LayerB)
-{ return HardLight(LayerB,LayerA); }
+// Overlay blending mode (by prod80)
+float3 Overlay(float3 c, float3 b)
+{ return c<0.5f ? 2.0f*c*b:(1.0f-2.0f*(1.0f-c)*(1.0f-b));}
 
 
 float Lum(float3 c){

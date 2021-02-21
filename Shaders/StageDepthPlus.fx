@@ -1,9 +1,13 @@
 //Shader edited originalnicodr
 
 //If you want to have multiple instances of StageDepthPlus you will have to change the following lines in every copy of the shader:
-//- Line 43: change "StageDepthPlus" to anything else (any namespace that you arent using in other shader).
-//- Line 54: change the "Stageplus.png" name file for the name of the image you want to use in this instance
-//- Line 425: change the name of the technique
+//- Line 47: change "StageDepthPlus" to anything else (any namespace that you arent using in other shader).
+//- Line 58: change the "Stageplus.png" name file for the name of the image you want to use in this instance
+//- Line 470: change the name of the technique
+//- Replace all "StageTexPlus" with "StageTexPlus1" or a different text. This shouldnt be necesary because of the namespace, but for some reason it doesnt behave well without it.
+//- Change the name of "STAGE_TEXTURE_WIDTH" and "STAGE_TEXTURE_HEIGHT" every time they appear for something else.
+
+////Check for updates here: https://github.com/originalnicodr/CorgiFX
 
 // Made by Marot Satil for the GShade ReShade package!
 // You can follow me via @MarotSatil on Twitter, but I don't use it all that much.
@@ -61,7 +65,7 @@ namespace StageDepthPlus
 	uniform bool DepthMapY < 
 		ui_label = "Use depth map";
 	    ui_category = "Controls";
-	> = true;
+	> = false;
 
 	uniform bool FlipH < 
 		ui_label = "Flip Horizontal";
@@ -119,6 +123,57 @@ namespace StageDepthPlus
 	//////////////////////////////////////
 	// textures
 	//////////////////////////////////////
+	#ifndef STAGE_TEXTURE_WIDTH
+	#define STAGE_TEXTURE_WIDTH BUFFER_WIDTH
+	#endif
+
+	#ifndef STAGE_TEXTURE_HEIGHT
+	#define STAGE_TEXTURE_HEIGHT BUFFER_HEIGHT
+	#endif
+
+	//If you enter a large value for the texture width or height the game might crash and the shader stop working in that preset. To fix it open the preset.ini file and lower de value manually
+	//If for some reason the shader dosnt work for a graphic api coment all these if and decommend the commented line below
+
+	#if (__RENDERER__ == 0x9000)//DX9 4096 x 4096
+		#if (STAGE_TEXTURE_HEIGHT > 4096 || STAGE_TEXTURE_WIDTH > 4096)
+			texture Stageplus_texture <source=StageTexPlus;> { Width = STAGE_TEXTURE_WIDTH>STAGE_TEXTURE_HEIGHT ? 4096 : int((STAGE_TEXTURE_WIDTH/STAGE_TEXTURE_HEIGHT)*4096); Height = STAGE_TEXTURE_HEIGHT>STAGE_TEXTURE_WIDTH ? 4096 : int((STAGE_TEXTURE_HEIGHT/STAGE_TEXTURE_WIDTH)*4096); Format=TEXFORMAT; };
+		#else
+			texture Stageplus_texture <source=StageTexPlus;> { Width = STAGE_TEXTURE_WIDTH; Height = STAGE_TEXTURE_HEIGHT; Format=TEXFORMAT;};
+		#endif
+	#elif (__RENDERER__ >=  0xb000) //DX11 to 16384 x 16384, DX12, VULKAN and OPENGL should also enter here
+		#if (STAGE_TEXTURE_HEIGHT > 16384 || STAGE_TEXTURE_WIDTH > 16384)
+			texture Stageplus_texture <source=StageTexPlus;> { Width = STAGE_TEXTURE_WIDTH>STAGE_TEXTURE_HEIGHT ? 16384 : int((STAGE_TEXTURE_WIDTH/STAGE_TEXTURE_HEIGHT)*16384); Height = STAGE_TEXTURE_HEIGHT>STAGE_TEXTURE_WIDTH ? 16384 : int((STAGE_TEXTURE_HEIGHT/STAGE_TEXTURE_WIDTH)*16384); Format=TEXFORMAT; };
+		#else
+			texture Stageplus_texture <source=StageTexPlus;> { Width = STAGE_TEXTURE_WIDTH; Height = STAGE_TEXTURE_HEIGHT; Format=TEXFORMAT;};
+		#endif
+	#elif (__RENDERER__ >= 0xa000)//DX10 8192 x 8192
+		#if (STAGE_TEXTURE_HEIGHT > 8192 || STAGE_TEXTURE_WIDTH > 8192)
+			texture Stageplus_texture <source=StageTexPlus;> { Width = STAGE_TEXTURE_WIDTH>STAGE_TEXTURE_HEIGHT ? 8192 : int((STAGE_TEXTURE_WIDTH/STAGE_TEXTURE_HEIGHT)*8192); Height = STAGE_TEXTURE_HEIGHT>STAGE_TEXTURE_WIDTH ? 8192 : int((STAGE_TEXTURE_HEIGHT/STAGE_TEXTURE_WIDTH)*8192); Format=TEXFORMAT; };
+		#else
+			texture Stageplus_texture <source=StageTexPlus;> { Width = STAGE_TEXTURE_WIDTH; Height = STAGE_TEXTURE_HEIGHT; Format=TEXFORMAT;};
+		#endif
+	#endif
+	
+	//texture Stageplus_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH*3; Height = BUFFER_HEIGHT*3; Format=TEXFORMAT; };
+
+	texture Test_Tex <
+	    source = "depthmap.png";
+	> {
+	    Format = RGBA8;
+	    Width  = STAGE_TEXTURE_WIDTH;
+	    Height = STAGE_TEXTURE_HEIGHT;
+	};
+
+	sampler Test_Sampler
+	{
+	    Texture  = Test_Tex;
+	    AddressU = BORDER;
+	    AddressV = BORDER;
+	};
+
+	sampler Stageplus_sampler { Texture = Stageplus_texture; };
+
+	/*
 	#if ((3*BUFFER_WIDTH <= 8192) && (3*BUFFER_WIDTH <= 8192))
 	texture Stageplus_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH*3; Height = BUFFER_HEIGHT*3; Format=TEXFORMAT; };
 	#else
@@ -128,11 +183,8 @@ namespace StageDepthPlus
 	texture Stageplus_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format=TEXFORMAT; };
 	#endif
 	#endif
+	*/
 
-	//////////////////////////////////////
-	// samplers
-	//////////////////////////////////////
-	sampler Stageplus_sampler { Texture = Stageplus_texture; };
 
 	//Blending modes functions
 
@@ -152,13 +204,13 @@ namespace StageDepthPlus
 	float3 Lighten(float3 LayerA, float3 LayerB)
 	{ return max(LayerA,LayerB); }
 
-	// Color Dodge blending mode
+	// Color Dodge blending mode (by prod80)
 	float3 ColorDodge(float3 LayerA, float3 LayerB)
-	{ return (LayerB.r < 1 && LayerB.g < 1 && LayerB.b < 1) ? min(1.0,LayerA/(1.0-LayerB)) : 1.0;}
-
-	// Color Burn blending mode
+	{ return LayerB>=1.0f ? LayerB:saturate(LayerA/(1.0f-LayerB));}
+		
+	// Color Burn blending mode (by prod80)
 	float3 ColorBurn(float3 LayerA, float3 LayerB)
-	{ return (LayerB.r > 0 && LayerB.g > 0 && LayerB.b > 0) ? 1.0-min(1.0,(1.0-LayerA)/LayerB) : 0;}
+	{ return LayerB<=0.0f ? LayerB:saturate(1.0f-((1.0f-LayerA)/LayerB)); }
 
 	// Hard light blending mode
 	float3 HardLight(float3 LayerA, float3 LayerB)
@@ -181,8 +233,8 @@ namespace StageDepthPlus
 	{ return LayerA+LayerB-2*LayerA*LayerB; }
 
 	// Overlay blending mode
-	float3 Overlay(float3 LayerA, float3 LayerB)
-	{ return HardLight(LayerB,LayerA); }
+	float3 Overlay(float3 c, float3 b)
+	{ return c<0.5f ? 2.0f*c*b:(1.0f-2.0f*(1.0f-c)*(1.0f-b));}
 
 
 	float Lum(float3 c){
@@ -354,34 +406,27 @@ namespace StageDepthPlus
 	 /// SHADER ///
 	//////////////
 
-	texture Test_Tex <
-	    source = "depthmap.png";
-	> {
-	    Format = RGBA8;
-	    Width  = BUFFER_WIDTH;
-	    Height = BUFFER_HEIGHT;
-	};
-
-	sampler Test_Sampler
-	{
-	    Texture  = Test_Tex;
-	    AddressU = BORDER;
-	    AddressV = BORDER;
-	};
-
 	void PS_StageDepth(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, out float4 color : SV_Target)
 	{
+		
+
 		float4 backbuffer = tex2D(ReShade::BackBuffer, texcoord).rgba;
+
+		color= backbuffer;//because of the warning
+
 		float depth = 1 - ReShade::GetLinearizedDepth(texcoord).r;
 		float2 uvtemp=texcoord;
 		if (FlipH) {uvtemp.x = 1-uvtemp.x;}//horizontal flip
 	    if (FlipV) {uvtemp.y = 1-uvtemp.y;} //vertical flip
 
-		float2 Layer_Scalereal= float2 (Layer_Scale.x-0.44,(Layer_Scale.y-0.44)*BUFFER_WIDTH/BUFFER_HEIGHT);
+		float2 Layer_Scalereal= float2 (Layer_Scale.x-0.44,(Layer_Scale.y-0.44)*STAGE_TEXTURE_WIDTH/STAGE_TEXTURE_HEIGHT);
+
 	    float2 Layer_Posreal= float2((FlipH) ? -Layer_Pos.x : Layer_Pos.x, (FlipV) ? Layer_Pos.y:-Layer_Pos.y);
 
 		uvtemp= float2(((uvtemp.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),uvtemp.y);
+		
 		uvtemp=(rotate(uvtemp,Layer_Posreal+0.5,radians(Axis))*Layer_Scalereal-((Layer_Posreal+0.5)*Layer_Scalereal-0.5));
+
 		const float4 layer     = tex2D(Stageplus_sampler, uvtemp).rgba;
 		float4 precolor   = lerp(backbuffer, layer, layer.a * Stage_Opacity);
 
@@ -392,29 +437,29 @@ namespace StageDepthPlus
 			if (uvtemp.x>0 && uvtemp.y>0  && uvtemp.x<1 && uvtemp.y<1){
 				switch (BlendM){
 					case 0:{color = lerp(backbuffer.rgb, precolor.rgb, layer.a * Stage_Opacity);break;}
-					case 1:{color = lerp(backbuffer, Multiply(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 2:{color = lerp(backbuffer, Screen(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 3:{color = lerp(backbuffer, Overlay(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 4:{color = lerp(backbuffer, Darken(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 5:{color = lerp(backbuffer, Lighten(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 6:{color = lerp(backbuffer, ColorDodge(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 7:{color = lerp(backbuffer, ColorBurn(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 8:{color = lerp(backbuffer, HardLight(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 9:{color = lerp(backbuffer, SoftLight(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 10:{color = lerp(backbuffer, Difference(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 11:{color = lerp(backbuffer, Exclusion(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 12:{color = lerp(backbuffer, Hue(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 13:{color = lerp(backbuffer, Saturation(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 14:{color = lerp(backbuffer, ColorM(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 15:{color = lerp(backbuffer, Luminosity(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 16:{color = lerp(backbuffer, Lineardodge(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 17:{color = lerp(backbuffer, Linearburn(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 18:{color = lerp(backbuffer, Vividlight(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 19:{color = lerp(backbuffer, Linearlight(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 20:{color = lerp(backbuffer, Pinlight(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 21:{color = lerp(backbuffer, Hardmix(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 22:{color = lerp(backbuffer, Reflect(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
-					case 23:{color = lerp(backbuffer, Glow(backbuffer.rgb, precolor.rgb), layer.a * Stage_Opacity);break;}
+					case 1:{color = lerp(backbuffer, float4 (Multiply(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 2:{color = lerp(backbuffer, float4 (Screen(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 3:{color = lerp(backbuffer, float4 (Overlay(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 4:{color = lerp(backbuffer, float4 (Darken(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 5:{color = lerp(backbuffer, float4 (Lighten(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 6:{color = lerp(backbuffer, float4 (ColorDodge(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 7:{color = lerp(backbuffer, float4 (ColorBurn(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 8:{color = lerp(backbuffer, float4 (HardLight(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 9:{color = lerp(backbuffer, float4 (SoftLight(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 10:{color = lerp(backbuffer, float4 (Difference(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 11:{color = lerp(backbuffer, float4 (Exclusion(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 12:{color = lerp(backbuffer, float4 (Hue(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 13:{color = lerp(backbuffer, float4 (Saturation(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 14:{color = lerp(backbuffer, float4 (ColorM(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 15:{color = lerp(backbuffer, float4 (Luminosity(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 16:{color = lerp(backbuffer, float4 (Lineardodge(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 17:{color = lerp(backbuffer, float4 (Linearburn(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 18:{color = lerp(backbuffer, float4 (Vividlight(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 19:{color = lerp(backbuffer, float4 (Linearlight(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 20:{color = lerp(backbuffer, float4 (Pinlight(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 21:{color = lerp(backbuffer, float4 (Hardmix(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 22:{color = lerp(backbuffer, float4 (Reflect(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
+					case 23:{color = lerp(backbuffer, float4 (Glow(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
 				}
 			}
 		}

@@ -1,5 +1,7 @@
 //Original code by Marty McFly
 
+//Check for updates here: https://github.com/originalnicodr/CorgiFX
+
 #include "ReShade.fxh"
 
 uniform bool FlipH < 

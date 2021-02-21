@@ -1,6 +1,8 @@
 //Made by originalnicdor. Heavely based in the ColorIsolation shader from Daodan317081, all kudos to him.
 //Color convertion functions from xIddqDx, props to him.
 
+//Check for updates here: https://github.com/originalnicodr/CorgiFX
+
 
 	  ////////////
 	 /// MENU ///

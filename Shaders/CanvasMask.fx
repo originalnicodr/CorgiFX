@@ -31,11 +31,6 @@ uniform float AlphaB <
 	ui_type = "color";
 > = 0.0;
 
-uniform bool Flip <
-	ui_label = "Inverse mask selection";
-	ui_category = "Gradient controls";
-> = false;
-
 uniform int GradientType <
 	ui_label = "Masking type";
 	ui_category = "Gradient controls";
@@ -72,7 +67,6 @@ uniform float Size <
 	ui_type = "slider";
 	ui_step = 0.002;
 	ui_min = 0.0; ui_max = 1.0;
-	ui_category_closed = true;
 > = 0.0;
 
 uniform float2 Originc <
@@ -105,7 +99,6 @@ uniform float SizeS <
 	ui_type = "slider";
 	ui_step = 0.001;
 	ui_min = 0; ui_max = 100;
-	ui_category_closed = true;
 > = 0.0;
 
 uniform float2 PositionS <
@@ -132,7 +125,6 @@ uniform float Sized <
 	ui_step = 0.002;
 	ui_min = 0.0; ui_max = 7.0;
 	ui_category = "Diamond gradient control";
-	ui_category_closed = true;
 > = 0.0;
 
 uniform float2 Origind <
@@ -166,7 +158,6 @@ uniform int FogType <
 	ui_type = "combo";
 	ui_category = "Fog controls";
 	ui_items = "Adaptive Fog\0Emphasize Fog\0";
-	ui_category_closed = true;
 > = false;
 
 uniform bool FlipFog <
@@ -207,7 +198,6 @@ uniform float FocusDepth <
 	ui_step = 0.001;
 	ui_min = 0.000; ui_max = 1.000;
 	ui_tooltip = "Manual focus depth of the point which has the focus. Range from 0.0, which means camera is the focus plane, till 1.0 which means the horizon is focus plane.";
-	ui_category_closed = true;
 > = 0.180;
 
 uniform float FocusRangeDepth <
@@ -286,6 +276,21 @@ uniform bool ShowDebug <
 	ui_tooltip = "Show the mask in grey tones.";
 > = false;
 
+
+uniform float2 FogRotationAngle  <
+    ui_label = "Angle of fog rotation";
+	ui_type = "slider";
+	ui_min = -1; ui_max = 1; ui_step = 0.01;
+	ui_category = "Fog Rotation (experimental)";
+> = float2(0, 0);
+
+uniform float2 FogRotationCenter  <
+    ui_label = "Center of rotation";
+	ui_type = "slider";
+	ui_min = 0; ui_max = 1;
+	ui_category = "Fog Rotation (experimental)";
+> = float2(0.5, 0.5);
+
 #ifndef M_PI
 	#define M_PI 3.1415927
 #endif
@@ -362,6 +367,7 @@ void BeforePS(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 I
 	Image = tex2D(ReShade::BackBuffer, UvCoord).rgb;
 }
 
+
 void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float4 fragment : SV_Target){
     fragment.rgba = tex2D(ReShade::BackBuffer, texcoord).rgb;
 
@@ -369,7 +375,13 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float4 f
 	float fogFactor;
 	switch(FogType){
 		case 0:{
-			fogFactor=clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor);break;
+
+			float2 uv = float2(BUFFER_WIDTH, BUFFER_HEIGHT) / float2( 512.0f, 512.0f ); // create multiplier on texcoord so that we can use 1px size reads on gaussian noise texture (since much smaller than screen)
+		    uv.xy = uv.xy * texcoord.xy;
+
+			//fogFactor=clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor);break;
+			fogFactor= clamp((-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y+depth - FogStart) * FogCurve, 0.0, saturate(MaxFogFactor+depth));//MaxFogFactor);
+			break;
 		}
 		case 1:{
 			fogFactor= 1-CalculateDepthDiffCoC(texcoord.xy);break;
