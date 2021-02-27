@@ -109,6 +109,8 @@ So again in one of those "I want to control x from shader y" moments I made some
  
 UPDATE: This last feature got tuned down to just using the depthmap to determine if the image should be seen or not. The interaction with the depth buffer got outdated so I deleted it. If someone wants to use that I will see what I can do to write it again.
  
+- **AR Correction**: You can now enter the definition of the image being used as preprocessor definitions so it can be automatically loaded with those values.
+ 
 ## Some example images
  
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476247-a745f780-4370-11ea-930c-fe813ae3200b.png">
@@ -188,6 +190,12 @@ I think the result is pretty close to what photoshop does, if you are masking sh
 - Change the gradient to other color space
  
 Any bug or suggestion you got don't hesitate in hitting me up.
+ 
+# Support and donations
+A thank you is more than enough, but if you would also like to help me out you can do it through [PayPal](https://www.paypal.com/paypalme/originalnicodr). Thank you very much to the very gentle folks that supported me, you guys are the best:
+ 
+- **Dread**
+ 
  
 
 
