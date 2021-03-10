@@ -1,11 +1,12 @@
 //Shader edited originalnicodr
 
 //If you want to have multiple instances of StageDepthPlus you will have to change the following lines in every copy of the shader:
-//- Line 47: change "StageDepthPlus" to anything else (any namespace that you arent using in other shader).
-//- Line 58: change the "Stageplus.png" name file for the name of the image you want to use in this instance
-//- Line 470: change the name of the technique
-//- Replace all "StageTexPlus" with "StageTexPlus1" or a different text. This shouldnt be necesary because of the namespace, but for some reason it doesnt behave well without it.
+//- Line 48: change "StageDepthPlus", "StageMaskTex",  to anything else (any namespace that you arent using in other shader).
+//- Line 500: change the name of the technique
+//- Replace all "StageTexPlus", "StageDepthTex" and "StageMaskTex" with "StageTexPlus1", "StageDepthTex1" and "StageMaskTex1" respectivly or a different text.
 //- Change the name of "STAGE_TEXTURE_WIDTH" and "STAGE_TEXTURE_HEIGHT" every time they appear for something else.
+
+// You can also change the "Stageplus.png" name file in line 58 for the name of the image you want to use in this instance, but it should be easier yo just edit that preprocessor definition inside the shader.
 
 ////Check for updates here: https://github.com/originalnicodr/CorgiFX
 
@@ -55,7 +56,15 @@ namespace StageDepthPlus
 	#endif
 
 	#ifndef StageTexPlus
-	#define StageTexPlus "Stageplus.png"//Put your image file name here or remplace the original image
+	#define StageTexPlus "StageImage.png"//Put your image file name here or remplace the original file
+	#endif
+
+	#ifndef StageDepthTex
+	#define StageDepthTex "StageDepthmap.png"//Put your depthmap image file name here or remplace the original file
+	#endif
+
+	#ifndef StageMaskTex
+	#define StageMaskTex "StageMask.png"//Put your mask image file name here or remplace the original file
 	#endif
 
 	  ////////////
@@ -64,6 +73,11 @@ namespace StageDepthPlus
 
 	uniform bool DepthMapY < 
 		ui_label = "Use depth map";
+	    ui_category = "Controls";
+	> = false;
+
+	uniform bool UseMask < 
+		ui_label = "Use a mask image";
 	    ui_category = "Controls";
 	> = false;
 
@@ -157,7 +171,15 @@ namespace StageDepthPlus
 	//texture Stageplus_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH*3; Height = BUFFER_HEIGHT*3; Format=TEXFORMAT; };
 
 	texture Test_Tex <
-	    source = "depthmap.png";
+	    source = StageDepthTex;
+	> {
+	    Format = RGBA8;
+	    Width  = STAGE_TEXTURE_WIDTH;
+	    Height = STAGE_TEXTURE_HEIGHT;
+	};
+
+	texture Mask_tex <
+	    source = StageMaskTex;
 	> {
 	    Format = RGBA8;
 	    Width  = STAGE_TEXTURE_WIDTH;
@@ -172,6 +194,8 @@ namespace StageDepthPlus
 	};
 
 	sampler Stageplus_sampler { Texture = Stageplus_texture; };
+
+	sampler Mask_sampler { Texture = Mask_tex; };
 
 	/*
 	#if ((3*BUFFER_WIDTH <= 8192) && (3*BUFFER_WIDTH <= 8192))
@@ -401,6 +425,7 @@ namespace StageDepthPlus
 		v2=v2+o;
 		return v2;
 	}
+	
 
 	  //////////////
 	 /// SHADER ///
@@ -427,7 +452,13 @@ namespace StageDepthPlus
 		
 		uvtemp=(rotate(uvtemp,Layer_Posreal+0.5,radians(Axis))*Layer_Scalereal-((Layer_Posreal+0.5)*Layer_Scalereal-0.5));
 
-		const float4 layer     = tex2D(Stageplus_sampler, uvtemp).rgba;
+		float4 layer  = tex2D(Stageplus_sampler, uvtemp).rgba;
+		if (UseMask){
+			float4 mask= tex2D(Mask_sampler, uvtemp).rgba;
+			//If there is a weird result check if (mask.a==1) before applying the mask to the layer.
+			layer=float4(layer.rgb, min(layer.a,mask.r));
+		}
+
 		float4 precolor   = lerp(backbuffer, layer, layer.a * Stage_Opacity);
 
 		float ImageDepthMap_depth = DepthMapY ? tex2D(Test_Sampler,uvtemp).x : 0;
@@ -465,7 +496,6 @@ namespace StageDepthPlus
 		}
 		color.a = backbuffer.a;
 	}
-
 
 	technique StageDepthPlus
 		#if __RESHADE__ >= 40000
