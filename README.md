@@ -105,8 +105,8 @@ So again in one of those "I want to control x from shader y" moments I made some
 - **Flip**: You can flip the image horizontally and vertically
 - **Blending Modes**: I wrote them for the CanvasFog shader and figured out they can be usefully applied to an image
 - **Depth Control**: It already was in the original StageDepth. It uses the depth buffer to decide to show the image or not
+- **Masking**: It allows you to use an image as a mask alongside the image itself.
 - **Depth map usage**: Kind of an experimental feature. You can provide a depthmap image alongside the stageplus image. This one will determine if the image is shown or not. There is an option to blend this depth map with the actual depth buffer so the layer can interact with the shaders that use the depth buffer, but this feature is kind of buggy at the moment (you would need to edit the position and scale values to match the ones in the StageDepthPlus shader for every shader you have). If you wanna use it replace the StageDepthPlusMap.fxh and ReShade.fxh files from your shaders folder with the ones in the repo and edit the global preprocessor definition RESHADE_MIX_STAGE_DEPTH_PLUS_MAP to 1.
- 
 UPDATE: This last feature got tuned down to just using the depthmap to determine if the image should be seen or not. The interaction with the depth buffer got outdated so I deleted it. If someone wants to use that I will see what I can do to write it again.
  
 - **AR Correction**: You can now enter the definition of the image being used as preprocessor definitions so it can be automatically loaded with those values.
