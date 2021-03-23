@@ -124,8 +124,7 @@ namespace StageDepthPlus
 		ui_type = "combo";
 		ui_label = "Blending Mode";
 		ui_tooltip = "Select the blending mode used with the gradient on the screen.";
-		ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0Linear burn\0Linear dodge\0Vivid light\0Linearlight\0Pin light\0Hardmix\0Reflect\0Glow";
-		ui_category = "Gradient controls";
+		ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0Linear burn\0Linear dodge\0Vivid light\0Linearlight\0Pin light\0Hardmix\0Reflect\0Glow\0";
 	> = 0;
 
 	uniform float Stage_depth <
@@ -133,6 +132,16 @@ namespace StageDepthPlus
 		ui_min = 0.0; ui_max = 1.0;
 		ui_label = "Depth";
 	> = 0.97;
+
+
+	
+uniform float3 ProjectorPos <
+	ui_text = "Experimental Features\n--------------------------------------------";
+	ui_label = "Projector Position";
+	ui_type = "drag";
+	ui_step = 0.001;
+	ui_min = float3(-100,-100,-100); ui_max = float3(100,100,100);
+> = float3(0,0,0);
 
 	//////////////////////////////////////
 	// textures
@@ -433,14 +442,21 @@ namespace StageDepthPlus
 
 	void PS_StageDepth(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, out float4 color : SV_Target)
 	{
+
+		static const float3x3 ProjectionMatrix = float3x3(1, 0, ProjectorPos.x,
+										  0, 1, ProjectorPos.y,
+										  0, 0, ProjectorPos.z
+										);
 		
+		float3 uvtemp3=float3(texcoord,ReShade::GetLinearizedDepth(texcoord));
+		float2 uvtemp=mul(ProjectionMatrix,uvtemp3).xy;
 
 		float4 backbuffer = tex2D(ReShade::BackBuffer, texcoord).rgba;
 
 		color= backbuffer;//because of the warning
 
 		float depth = 1 - ReShade::GetLinearizedDepth(texcoord).r;
-		float2 uvtemp=texcoord;
+		
 		if (FlipH) {uvtemp.x = 1-uvtemp.x;}//horizontal flip
 	    if (FlipV) {uvtemp.y = 1-uvtemp.y;} //vertical flip
 
@@ -451,6 +467,10 @@ namespace StageDepthPlus
 		uvtemp= float2(((uvtemp.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),uvtemp.y);
 		
 		uvtemp=(rotate(uvtemp,Layer_Posreal+0.5,radians(Axis))*Layer_Scalereal-((Layer_Posreal+0.5)*Layer_Scalereal-0.5));
+
+
+
+
 
 		float4 layer  = tex2D(Stageplus_sampler, uvtemp).rgba;
 		if (UseMask){
@@ -494,17 +514,11 @@ namespace StageDepthPlus
 				}
 			}
 		}
+
 		color.a = backbuffer.a;
 	}
 
 	technique StageDepthPlus
-		#if __RESHADE__ >= 40000
-		< ui_tooltip = 
-				"If you want to have the depth map affecting the image and the depth buffer make\n"
-				"sure to change the RESHADE_MIX_STAGE_DEPTH_PLUS_MAP value to 1 in the\n"
-				"Edit global proccesor definitions section and change the values\n"
-				"from the Fake Depth buffer controls to match the ones in the shader.\n"; >
-		#endif
 	{
 		pass
 		{

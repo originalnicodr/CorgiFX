@@ -61,7 +61,7 @@ uniform int BlendM <
 	ui_type = "combo";
 	ui_label = "Blending Mode";
 	ui_tooltip = "Select the blending mode used with the gradient on the screen.";
-	ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0Linear burn\0Linear dodge\0Vivid light\0Linearlight\0Pin light\0Hardmix\0Reflect\0Glow";
+	ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0Linear burn\0Linear dodge\0Vivid light\0Linearlight\0Pin light\0Hardmix\0Reflect\0Glow\0";
 	ui_category = "Gradient controls";
 > = 0;
 
@@ -668,7 +668,7 @@ float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
 //Function used to blend the gradients and the screen
 float3 Blender(float3 CA, float3 CB, float2 texcoord, float gradient, float fogFactor){
 	float3 fragment = tex2D(ReShade::BackBuffer, texcoord).rgb;
-	float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord).rgb, lerp(tex2D(Otis_BloomSampler, texcoord).rgb, lerp(CA.rgb, CB.rgb, Flip ? 1 - gradient : gradient), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));
+	float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord).rgb, lerp(tex2D(Otis_BloomSampler, texcoord).rgb, smoothstep(CA.rgb, CB.rgb, Flip ? 1 - gradient : gradient), fogFactor), fogFactor*smoothstep(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));
 	switch (BlendM){
 		case 0:{fragment=prefragment;break;}
 		case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}

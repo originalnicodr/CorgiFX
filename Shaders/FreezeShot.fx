@@ -61,7 +61,7 @@ uniform int BlendM <
 	ui_type = "combo";
 	ui_label = "Blending Mode";
 	ui_tooltip = "Select the blending mode used with the gradient on the screen.";
-	ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0Linear burn\0Linear dodge\0Vivid light\0Linearlight\0Pin light\0Hardmix\0Reflect\0Glow";
+	ui_items = "Normal\0Multiply\0Screen\0Overlay\0Darken\0Lighten\0Color Dodge\0Color Burn\0Hard Light\0Soft Light\0Difference\0Exclusion\0Hue\0Saturation\0Color\0Luminosity\0Linear burn\0Linear dodge\0Vivid light\0Linearlight\0Pin light\0Hardmix\0Reflect\0Glow\0";
 > = 0;
 
 uniform float Stage_depth <
@@ -341,7 +341,7 @@ float2 rotate(float2 v,float2 o, float a){
 }
 
 //float3 Freezef(float4 position : SV_Position, float2 texcoord : TexCoord, out float4 color : SV_Target)
-void Freezef(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, out float4 color : SV_Target)
+void Freezef(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, out float3 color : SV_Target)
 {
     float2 Layer_Scalereal= float2 (Layer_Scale.x-0.44,(Layer_Scale.y-0.44)*BUFFER_WIDTH/BUFFER_HEIGHT);
     float2 Layer_Posreal= float2((FlipH) ? -Layer_Pos.x : Layer_Pos.x, (FlipV) ? Layer_Pos.y:-Layer_Pos.y);
@@ -358,7 +358,7 @@ void Freezef(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, o
 
 	float4 precolor   = lerp(backbuffer, layer, Stage_Opacity);
     //float4 color;
-	color=backbuffer;
+	color=backbuffer.rgb;
 
 	float ImageDepthMap_depth = tex2D(DepthSamplernew,uvtemp).x;
 
@@ -366,37 +366,37 @@ void Freezef(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, o
 	{   
         if (uvtemp.x>0 && uvtemp.x>0 && uvtemp.y>0 && uvtemp.y>0 && uvtemp.x<1 && uvtemp.x<1 && uvtemp.y<1 && uvtemp.y<1){
 		    switch (BlendM){
-		    	case 0:{color = lerp(backbuffer.rgba, precolor.rgba,layer.a*Stage_Opacity);break;}
-		    	case 1:{color = lerp(backbuffer, Multiply(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 2:{color = lerp(backbuffer, Screen(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-                case 3:{color = lerp(backbuffer, Overlay(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 4:{color = lerp(backbuffer, Darken(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 5:{color = lerp(backbuffer, Lighten(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 6:{color = lerp(backbuffer, ColorDodge(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 7:{color = lerp(backbuffer, ColorBurn(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 8:{color = lerp(backbuffer, HardLight(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 9:{color = lerp(backbuffer, SoftLight(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 10:{color = lerp(backbuffer, Difference(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 11:{color = lerp(backbuffer, Exclusion(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 12:{color = lerp(backbuffer, Hue(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 13:{color = lerp(backbuffer, Saturation(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 14:{color = lerp(backbuffer, ColorM(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-		    	case 15:{color = lerp(backbuffer, Luminosity(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-				case 16:{color = lerp(backbuffer, Linearburn(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-				case 17:{color = lerp(backbuffer, Lineardodge(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-				case 18:{color = lerp(backbuffer, Vividlight(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-				case 19:{color = lerp(backbuffer, Linearlight(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-				case 20:{color = lerp(backbuffer, Pinlight(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-				case 21:{color = lerp(backbuffer, Hardmix(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-				case 22:{color = lerp(backbuffer, Reflect(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
-				case 23:{color = lerp(backbuffer, Glow(backbuffer.rgba, precolor.rgba), layer.a*Stage_Opacity);break;}
+		    	case 0:{color = lerp(backbuffer.rgb, precolor.rgb,layer.a*Stage_Opacity);break;}
+		    	case 1:{color = lerp(backbuffer.rgb, Multiply(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 2:{color = lerp(backbuffer.rgb, Screen(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+                case 3:{color = lerp(backbuffer.rgb, Overlay(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 4:{color = lerp(backbuffer.rgb, Darken(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 5:{color = lerp(backbuffer.rgb, Lighten(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 6:{color = lerp(backbuffer.rgb, ColorDodge(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 7:{color = lerp(backbuffer.rgb, ColorBurn(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 8:{color = lerp(backbuffer.rgb, HardLight(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 9:{color = lerp(backbuffer.rgb, SoftLight(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 10:{color = lerp(backbuffer.rgb, Difference(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 11:{color = lerp(backbuffer.rgb, Exclusion(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 12:{color = lerp(backbuffer.rgb, Hue(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 13:{color = lerp(backbuffer.rgb, Saturation(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 14:{color = lerp(backbuffer.rgb, ColorM(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+		    	case 15:{color = lerp(backbuffer.rgb, Luminosity(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+				case 16:{color = lerp(backbuffer.rgb, Linearburn(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+				case 17:{color = lerp(backbuffer.rgb, Lineardodge(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+				case 18:{color = lerp(backbuffer.rgb, Vividlight(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+				case 19:{color = lerp(backbuffer.rgb, Linearlight(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+				case 20:{color = lerp(backbuffer.rgb, Pinlight(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+				case 21:{color = lerp(backbuffer.rgb, Hardmix(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+				case 22:{color = lerp(backbuffer.rgb, Reflect(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
+				case 23:{color = lerp(backbuffer.rgb, Glow(backbuffer.rgb, precolor.rgb), layer.a*Stage_Opacity);break;}
 		    }
         }
 		else {
-			if (BlackBackground) color= float4(0,0,0,0);
+			if (BlackBackground) color= float3(0,0,0);
 		}
 	}
-	color.a = backbuffer.a;
+	//color.a = backbuffer.a;
     //return color;
 }
 
