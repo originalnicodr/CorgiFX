@@ -668,7 +668,7 @@ float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
 //Function used to blend the gradients and the screen
 float3 Blender(float3 CA, float3 CB, float2 texcoord, float gradient, float fogFactor){
 	float3 fragment = tex2D(ReShade::BackBuffer, texcoord).rgb;
-	float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord).rgb, lerp(tex2D(Otis_BloomSampler, texcoord).rgb, smoothstep(CA.rgb, CB.rgb, Flip ? 1 - gradient : gradient), fogFactor), fogFactor*smoothstep(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));
+	float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord).rgb, lerp(tex2D(Otis_BloomSampler, texcoord).rgb, lerp(CA.rgb, CB.rgb, Flip ? 1 - gradient : gradient), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));
 	switch (BlendM){
 		case 0:{fragment=prefragment;break;}
 		case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
