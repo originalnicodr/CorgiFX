@@ -2,7 +2,7 @@
 
 //If you want to have multiple instances of StageDepthPlus you will have to change the following lines in every copy of the shader:
 //- Line 48: change "StageDepthPlus", "StageMaskTex",  to anything else (any namespace that you arent using in other shader).
-//- Line 500: change the name of the technique
+//- Line 521: change the name of the technique
 //- Replace all "StageTexPlus", "StageDepthTex" and "StageMaskTex" with "StageTexPlus1", "StageDepthTex1" and "StageMaskTex1" respectivly or a different text.
 //- Change the name of "STAGE_TEXTURE_WIDTH" and "STAGE_TEXTURE_HEIGHT" every time they appear for something else.
 
@@ -141,7 +141,7 @@ uniform float3 ProjectorPos <
 	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = float3(-100,-100,-100); ui_max = float3(100,100,100);
-> = float3(0,0,0);
+> = float3(0.5,0.5,0);
 
 	//////////////////////////////////////
 	// textures
@@ -443,8 +443,8 @@ uniform float3 ProjectorPos <
 	void PS_StageDepth(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, out float4 color : SV_Target)
 	{
 
-		static const float3x3 ProjectionMatrix = float3x3(1, 0, ProjectorPos.x,
-										  0, 1, ProjectorPos.y,
+		static const float3x3 ProjectionMatrix = float3x3(1, 0, ProjectorPos.x-0.5,
+										  0, 1, ProjectorPos.y-0.5,
 										  0, 0, ProjectorPos.z
 										);
 		
