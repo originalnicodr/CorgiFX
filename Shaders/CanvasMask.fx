@@ -358,7 +358,7 @@ float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
 	if (depthdiff > desaturateFullRange)
 		return saturate(1.0);
 	else
-		return saturate(smoothstep(0, desaturateFullRange, (depthdiff*(1-FogCurveE))));
+		return saturate(smoothstep(FocusRangeDepth, desaturateFullRange, (depthdiff*(1-FogCurveE))));
 }
 
 void BeforePS(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 Image : SV_Target)
