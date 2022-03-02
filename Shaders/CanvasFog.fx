@@ -21,34 +21,66 @@
  /// MENU ///
 ////////////
 
-uniform float4 ColorA < 
+uniform float4 ColorA <
 	ui_label = "Colour (A)";
     ui_type = "color";
-	ui_category = "Gradient controls";
+	ui_category = "Color A controls";
 > = float4(1.0, 0.0, 0.0, 1.0);
+
+uniform bool UseColorPickerA<
+	ui_text = "Color A picker options";
+	ui_label = "Use color A picker";
+	ui_category = "Color A controls";
+	ui_tooltip = "Select a color from the screen to be used instead of ColorA. Take in mind that it still uses the alpha channel from the color A.";
+> = false;
+
+uniform float2 axisColorASelectAxis <
+	ui_category = "Color A controls";
+	ui_label = "Color A picker position";
+	ui_type = "drag";
+	ui_step = 0.001;
+	ui_min = 0.000; ui_max = 1.000;
+> = float2(0.5, 0.5);
+
+uniform bool drawColorASelectON <
+	ui_category = "Color A controls";
+	ui_label = "Draw color A picker position";
+    ui_tooltip = "Only visible if the picker is used";
+> = false;
 
 uniform float4 ColorB < 
 	ui_label = "Colour (B)";
 	ui_type = "color";
-	ui_category = "Gradient controls";
+	ui_category = "Color B controls";
 > = float4(0.0, 0.0, 1.0, 0.0);
 
+uniform bool UseColorPickerB<
+	ui_text = "Color B picker options";
+	ui_label = "Use color B picker";
+	ui_category = "Color B controls";
+	ui_tooltip = "Select a color from the screen to be used instead of ColorB. Take in mind that it still uses the alpha channel from the color B.";
+> = false;
+
+uniform float2 axisColorBSelectAxis <
+	ui_category = "Color B controls";
+	ui_label = "Color B picker position";
+	ui_type = "drag";
+	ui_step = 0.001;
+	ui_min = 0.000; ui_max = 1.000;
+> = float2(0.5, 0.5);
+
+uniform bool drawColorBSelectON <
+	ui_category = "Color B controls";
+	ui_label = "Draw color B picker position";
+    ui_tooltip = "Only visible if the picker is used";
+> = false;
+
 uniform bool Flip <
-	ui_label = "Color flip";
-	ui_category = "Gradient controls";
+	ui_label = "Flip Colors";
 > = false;
 
-uniform bool ColorpA<
-	ui_label = "Color A picker";
-	ui_category = "Gradient controls";
-	ui_tooltip = "Select a color from the screen to be used instead of ColorA. Left-click to sample. Take in mind that it still uses the alpha channel from the color A.\nIts recommended to select the colors after setting everything up since futher clicks will change the desire color.";
-> = false;
 
-uniform bool ColorpB<
-	ui_label = "Color B picker";
-	ui_category = "Gradient controls";
-	ui_tooltip = "Select a color from the screen to be used instead of ColorB. Left-click to sample. Take in mind that it still uses the alpha channel from the color B.\nIts recommended to select the colors after setting everything up since futher clicks will change the desire color.";
-> = false;
+
 
 uniform int GradientType <
 	ui_type = "combo";
@@ -67,14 +99,14 @@ uniform int BlendM <
 
 uniform float Scale < 
 	ui_label = "Gradient sharpness";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = -10.0; ui_max = 10.0; ui_step = 0.0001;
 	ui_category = "Gradient controls";
 > = 1.0;
 
 uniform float Axis < 
 	ui_label = "Angle";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.1;
 	ui_min = -180.0; ui_max = 180.0;
 	ui_category = "Linear gradient control";
@@ -82,17 +114,17 @@ uniform float Axis <
 > = 0.0;
 
 uniform float Offset < 
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_label = "Position";
-	ui_step = 0.002;
+	ui_step = 0.001;
 	ui_min = -0.5; ui_max = 0.5;
 	ui_category = "Linear gradient control";
 > = 0.0;
 
 uniform float Size < 
 	ui_label = "Size";
-	ui_type = "slider";
-	ui_step = 0.002;
+	ui_type = "drag";
+	ui_step = 0.001;
 	ui_min = 0.0; ui_max = 1.0;
 	ui_category = "Radial gradient control";
 	ui_category_closed = true;
@@ -101,7 +133,7 @@ uniform float Size <
 uniform float2 Originc <
 	ui_category = "Radial gradient control";
 	ui_label = "Position";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = -1.5; ui_max = 2;
 > = float2(0.5, 0.5);
@@ -109,7 +141,7 @@ uniform float2 Originc <
 uniform float2 Modifierc <
 	ui_category = "Radial gradient control";
 	ui_label = "Modifier";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0.000; ui_max = 10.000;
 > = float2(1.0, 1.0);
@@ -117,15 +149,15 @@ uniform float2 Modifierc <
 uniform float AnguloR <
 	ui_category = "Radial gradient control";
 	ui_label = "Angle";
-	ui_type = "slider";
-	ui_step = 0.001;
+	ui_type = "drag";
+	ui_step = 0.1;
 	ui_min = 0; ui_max = 360;
 > = 0.0;
 
 uniform float SizeS <
 	ui_category = "Strip gradient control";
 	ui_label = "Size";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0; ui_max = 100;
 	ui_category_closed = true;
@@ -134,7 +166,7 @@ uniform float SizeS <
 uniform float2 PositionS <
 	ui_category = "Strip gradient control";
 	ui_label = "Position";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0; ui_max = 1;
 > = float2(0.5, 0.5);
@@ -142,8 +174,8 @@ uniform float2 PositionS <
 uniform float AnguloS <
 	ui_category = "Strip gradient control";
 	ui_label = "Angle";
-	ui_type = "slider";
-	ui_step = 0.001;
+	ui_type = "drag";
+	ui_step = 0.1;
 	ui_min = 0; ui_max = 360;
 > = 0.0;
 
@@ -151,7 +183,7 @@ uniform float AnguloS <
 
 uniform float Sized < 
 	ui_label = "Size";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.002;
 	ui_min = 0.0; ui_max = 7.0;
 	ui_category = "Diamond gradient control";
@@ -161,7 +193,7 @@ uniform float Sized <
 uniform float2 Origind <
 	ui_category = "Diamond gradient control";
 	ui_label = "Position";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = -1.5; ui_max = 2;
 > = float2(0.5, 0.5);
@@ -169,7 +201,7 @@ uniform float2 Origind <
 uniform float2 Modifierd <
 	ui_category = "Diamond gradient control";
 	ui_label = "Modifier";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0.000; ui_max = 10.000;
 > = float2(1.0, 1.0);
@@ -177,7 +209,7 @@ uniform float2 Modifierd <
 uniform float Angulod <
 	ui_category = "Diamond gradient control";
 	ui_label = "Angle";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0; ui_max = 360;
 > = 0.0;
@@ -188,17 +220,22 @@ uniform int FogType <
 	ui_type = "combo";
 	ui_label = "Fog type";
 	ui_category = "Fog controls";
-	ui_items = "Adaptive Fog\0Emphasize Fog\0";
+	ui_items = "Adaptive Fog\0Emphasize Fog\0Depth Slicer Fog\0";
 	ui_category_closed = true;
 > = false;
 
 uniform bool FlipFog <
-	ui_label = "Fog flip";
+	ui_label = "Invert fog";
 	ui_category = "Fog controls";
 > = false;
 
+//uniform bool UseAFBloom<
+//	ui_label = "Use AdaptiveFog Bloom";
+//	ui_category = "AdaptiveFog controls";
+//> = false;
+
 uniform float MaxFogFactor <
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0.000; ui_max=1.000;
 	ui_tooltip = "The maximum fog factor. 1.0 makes distant objects completely fogged out, a lower factor will shimmer them through the fog.";
 	ui_step = 0.001;
@@ -206,7 +243,7 @@ uniform float MaxFogFactor <
 > = 1.0;
 
 uniform float FogCurve <
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0.00; ui_max=175.00;
 	ui_step = 0.01;
 	ui_tooltip = "The curve how quickly distant objects get fogged. A low value will make the fog appear just slightly. A high value will make the fog kick in rather quickly. The max value in the rage makes it very hard in general to view any objects outside fog.";
@@ -214,67 +251,41 @@ uniform float FogCurve <
 > = 170;
 
 uniform float FogStart <
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0.000; ui_max=1.000;
 	ui_step = 0.001;
 	ui_category = "AdaptiveFog controls";
 	ui_tooltip = "Start of the fog. 0.0 is at the camera, 1.0 is at the horizon, 0.5 is halfway towards the horizon. Before this point no fog will appear.";
 > = 0.2;
 
-uniform float BloomThreshold <
-	ui_type = "slider";
-	ui_min = 0.00; ui_max=50.00;
-	ui_step = 0.1;
-	ui_tooltip = "Threshold for what is a bright light (that causes bloom) and what isn't.";
-	ui_category = "AdaptiveFog-Bloom controls";
-	ui_category_closed = true;
-> = 10.25;
-
-uniform float BloomPower <
-	ui_type = "slider";
-	ui_min = 0.000; ui_max=100.000;
-	ui_step = 0.1;
-	ui_tooltip = "Strength of the bloom";
-	ui_category = "AdaptiveFog-Bloom controls";
-> = 0.0; //prev 10
-
-uniform float BloomWidth <
-	ui_type = "slider";
-	ui_min = 0.0000; ui_max=1.0000;
-	ui_tooltip = "Width of the bloom";
-	ui_category = "AdaptiveFog-Bloom controls";
-> = 0.2;
-
 uniform float FocusDepth <
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0.000; ui_max = 1.000;
 	ui_step = 0.001;
 	ui_tooltip = "Manual focus depth of the point which has the focus. Range from 0.0, which means camera is the focus plane, till 1.0 which means the horizon is focus plane.";
 	ui_category = "EmphasizeFog controls";
 	ui_category_closed = true;
-> = 0.026;
+> = 0.100;
 
 uniform float FocusRangeDepth <
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0.0; ui_max = 1.000;
 	ui_step = 0.001;
 	ui_tooltip = "The depth of the range around the manual focus depth which should be emphasized. Outside this range, de-emphasizing takes place";
 	ui_category = "EmphasizeFog controls";
-> = 0.001;
+> = 1.0;
 
 uniform float FocusEdgeDepth <
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0.000; ui_max = 1.000;
 	ui_tooltip = "The depth of the edge of the focus range. Range from 0.00, which means no depth, so at the edge of the focus range, the effect kicks in at full force,\ntill 1.00, which means the effect is smoothly applied over the range focusRangeEdge-horizon.";
 	ui_category = "EmphasizeFog controls";
 	ui_step = 0.001;
-> = 0.050;
-
-
+> = 0.150;
 
 uniform float FogCurveE <
 	ui_label = "Sharpness";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0.00; ui_max=1;
 	ui_step = 0.01;
 	ui_category = "EmphasizeFog controls";
@@ -282,71 +293,101 @@ uniform float FogCurveE <
 
 
 uniform bool Spherical <
+	ui_label = "Enable Spherical mode";
+	ui_text= "Spherical mode";
 	ui_tooltip = "Enables Emphasize in a sphere around the focus-point instead of a 2D plane";
 	ui_category = "EmphasizeFog controls";
 > = false;
 
 uniform int Sphere_FieldOfView <
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 1; ui_max = 180;
 	ui_tooltip = "Specifies the estimated Field of View you are currently playing with. Range from 1, which means 1 Degree, till 180 which means 180 Degree (half the scene).\nNormal games tend to use values between 60 and 90.";
 	ui_category = "EmphasizeFog controls";
 > = 75;
 
 uniform float Sphere_FocusHorizontal <
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0; ui_max = 1;
 	ui_tooltip = "Specifies the location of the focuspoint on the horizontal axis. Range from 0, which means left screen border, till 1 which means right screen border.";
 	ui_category = "EmphasizeFog controls";
 > = 0.5;
 
 uniform float Sphere_FocusVertical <
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0; ui_max = 1;
 	ui_tooltip = "Specifies the location of the focuspoint on the vertical axis. Range from 0, which means upper screen border, till 1 which means bottom screen border.";
 	ui_category = "EmphasizeFog controls";
 > = 0.5;
 
-uniform float3 BlendColor <
-	ui_type = "color";
-	ui_tooltip = "Specifies the blend color to blend with the rest of the scene. in (Red, Green, Blue). Use dark colors to darken further away objects";
-	ui_category = "EmphasizeFog controls";
-> = float3(0.0, 0.0, 0.0);
 
-uniform float BlendFactor <
-	ui_type = "slider";
-	ui_min = 0.0; ui_max = 1.0;
-	ui_tooltip = "Specifies the factor BlendColor is blended. Range from 0.0, which means no color blending, till 1.0 which means full blend of the BlendColor";
-	ui_category = "EmphasizeFog controls";
-> = 0.0;
-
-uniform float EffectFactor <
-	ui_type = "slider";
-	ui_min = 0.0; ui_max = 1.0;
-	ui_tooltip = "Specifies the factor the blending is applied. Range from 0.0, which means the effect is off (normal image), till 1.0 which means the blended parts are\nfull blended";
-	ui_category = "EmphasizeFog controls";
-> = 0.9;
-
+uniform float depth_near <
+		ui_category_closed = true;
+        ui_type = "drag";
+        ui_label = "Depth Near Plane";
+        ui_tooltip = "Depth Near Plane";
+        ui_category = "Depth Slicer Fog controls";
+        ui_min = 0.0;
+        ui_max = 1.0;
+        > = 0.0;
+uniform float depthpos <
+        ui_type = "drag";
+        ui_label = "Depth Position";
+        ui_tooltip = "Depth Position";
+        ui_category = "Depth Slicer Fog controls";
+        ui_min = 0.0;
+        ui_max = 1.0;
+        > = 0.200;
+uniform float depth_far <
+        ui_type = "drag";
+        ui_label = "Depth Far Plane";
+        ui_tooltip = "Depth Far Plane";
+        ui_category = "Depth Slicer Fog controls";
+        ui_min = 0.0;
+        ui_max = 1.0;
+        > = 0.0;
+uniform float depth_smoothing <
+        ui_type = "drag";
+        ui_label = "Depth Smoothing";
+        ui_tooltip = "Depth Smoothing";
+        ui_category = "Depth Slicer Fog controls";
+        ui_min = 0.0;
+        ui_max = 1.0;
+        > = 0.005;
 
 
 uniform float2 FogRotationAngle  <
+	ui_category_closed = true;
+	ui_text = "Fog Rotation (AdaptiveFog only for now)";
     ui_label = "Angle of fog rotation";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = -1; ui_max = 1; ui_step = 0.01;
-	ui_category = "Fog Rotation (experimental)";
+	ui_category = "Experimental";
 > = float2(0, 0);
 
 uniform float2 FogRotationCenter  <
     ui_label = "Center of rotation";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0; ui_max = 1;
-	ui_category = "Fog Rotation (experimental)";
+	ui_category = "Experimental";
 > = float2(0.5, 0.5);
 
-uniform bool Texture <
-	ui_label = "Texture";
-	ui_category = "Fog Rotation (experimental)";
+uniform bool UseFogTexture <
+	ui_label = "Use fog Texture";
+	ui_category = "Experimental";
 > = false;
+uniform bool UseFogTextureDepth <
+	ui_label = "Make the texture smaller with depth";
+	ui_category = "Experimental";
+> = false;
+
+uniform float FogTextureSize <
+	ui_type = "drag";
+	ui_type = "Fog Texture size";
+	ui_category = "Experimental";
+	ui_min = 0.0; ui_max = 5.0;
+> = 1;
+
 
 
 #ifndef M_PI
@@ -580,61 +621,6 @@ float2 rotate(float2 v,float2 o, float a){
 	return v2;
 }
 
-//////////////////////////////////////
-// textures
-//////////////////////////////////////
-texture   Otis_BloomTarget 	{ Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RGBA8;};
-texture ATexture1		{ Width = 1; Height = 1;};		// for storing the new color value
-texture ATexture2		{ Width = 1; Height = 1;};		// for storing the old color value
-texture BTexture1		{ Width = 1; Height = 1;};		// for storing the new color value
-texture BTexture2		{ Width = 1; Height = 1;};		// for storing the old color value
-
-//////////////////////////////////////
-// samplers
-//////////////////////////////////////
-sampler2D Otis_BloomSampler { Texture = Otis_BloomTarget; };
-sampler ColorAsavernew		{ Texture = ATexture1; };
-sampler ColorAsaverold		{ Texture = ATexture2; };
-sampler ColorBsavernew		{ Texture = BTexture1; };
-sampler ColorBsaverold		{ Texture = BTexture2; };
-
-// pixel shader which performs bloom, by CeeJay. 
-void PS_Otis_AFG_PerformBloom(float4 position : SV_Position, float2 texcoord : TEXCOORD0, out float4 fragment: SV_Target0)
-{
-	float4 color = tex2D(ReShade::BackBuffer, texcoord);
-	float3 BlurColor2 = 0;
-	float3 Blurtemp = 0;
-	const float MaxDistance = 8*BloomWidth;
-	float CurDistance = 0;
-	const float Samplecount = 25.0;
-	const float2 blurtempvalue = texcoord * ReShade::PixelSize * BloomWidth;
-	float2 BloomSample = float2(2.5,-2.5);
-	float2 BloomSampleValue;
-	
-	for(BloomSample.x = (2.5); BloomSample.x > -2.0; BloomSample.x = BloomSample.x - 1.0)
-	{
-		BloomSampleValue.x = BloomSample.x * blurtempvalue.x;
-		float2 distancetemp = BloomSample.x * BloomSample.x * BloomWidth;
-		
-		for(BloomSample.y = (- 2.5); BloomSample.y < 2.0; BloomSample.y = BloomSample.y + 1.0)
-		{
-			distancetemp.y = BloomSample.y * BloomSample.y;
-			CurDistance = (distancetemp.y * BloomWidth) + distancetemp.x;
-			BloomSampleValue.y = BloomSample.y * blurtempvalue.y;
-			Blurtemp.rgb = tex2D(ReShade::BackBuffer, float2(texcoord + BloomSampleValue)).rgb;
-			BlurColor2.rgb += lerp(Blurtemp.rgb,color.rgb, sqrt(CurDistance / MaxDistance));
-		}
-	}
-	BlurColor2.rgb = (BlurColor2.rgb / (Samplecount - (BloomPower - BloomThreshold*5)));
-	const float Bloomamount = (dot(color.rgb,float3(0.299f, 0.587f, 0.114f)));
-	const float3 BlurColor = BlurColor2.rgb * (BloomPower + 4.0);
-	color.rgb = lerp(color.rgb,BlurColor.rgb, Bloomamount);	
-	fragment = saturate(color);
-}
-
-//Mouse inputs to select color
-uniform float2 MouseCoords < source = "mousepoint"; >;
-uniform bool LeftMouseDown < source = "mousebutton"; keycode = 0; toggle = false; >;
 
 //Emphasize algorithm from Otis
 float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
@@ -668,7 +654,8 @@ float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
 //Function used to blend the gradients and the screen
 float3 Blender(float3 CA, float3 CB, float2 texcoord, float gradient, float fogFactor){
 	float3 fragment = tex2D(ReShade::BackBuffer, texcoord).rgb;
-	float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord).rgb, lerp(tex2D(Otis_BloomSampler, texcoord).rgb, lerp(CA.rgb, CB.rgb, Flip ? 1 - gradient : gradient), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));
+	//float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord).rgb, lerp(tex2D(Otis_BloomSampler, texcoord).rgb, lerp(CA.rgb, CB.rgb, Flip ? 1 - gradient : gradient), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));
+	float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord).rgb, lerp(CA.rgb, CB.rgb, Flip ? 1 - gradient : gradient), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));
 	switch (BlendM){
 		case 0:{fragment=prefragment;break;}
 		case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
@@ -772,6 +759,21 @@ float2 cellular(float2 P) {
 }
 */
 
+//credits to prod80
+float PS_DepthSlice(float2 texcoord : TEXCOORD)
+{
+    float4 color      = tex2D( ReShade::BackBuffer, texcoord );
+    float depth       = ReShade::GetLinearizedDepth( texcoord ).x;
+    float depth_np    = depthpos - depth_near;
+    float depth_fp    = depthpos + depth_far;
+    float dn          = smoothstep( depth_np - depth_smoothing, depth_np, depth );
+    float df          = 1.0f - smoothstep( depth_fp, depth_fp + depth_smoothing, depth );
+    
+    float opacity    = 1.0f - ( dn * df );
+	return opacity;
+}
+
+
 //Gaussian Noise
 texture texFogNoise				< source = "fognoise.jpg"; > { Width = 512; Height = 512; Format = RGBA8; };
 sampler SamplerFogNoise				{ Texture = texFogNoise; MipFilter = POINT; MinFilter = POINT; MagFilter = POINT; AddressU = WRAP; AddressV = WRAP; AddressW = WRAP;};
@@ -781,6 +783,8 @@ void PS_Otis_Original_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 
 {
     // Grab screen texture
 	fragment.rgba = tex2D(ReShade::BackBuffer, texcoord).rgb;
+	float3 originalColor= fragment.rgb;
+	
 
 	const float depth = ReShade::GetLinearizedDepth(texcoord).r;
 	float fogFactor;
@@ -843,10 +847,13 @@ void PS_Otis_Original_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 
 			//fogFactor=cellular(fogFactor);
 			//break;
 
-			float2 uv = float2(BUFFER_WIDTH, BUFFER_HEIGHT) / float2( 512.0f, 512.0f ); // create multiplier on texcoord so that we can use 1px size reads on gaussian noise texture (since much smaller than screen)
-		    uv.xy = uv.xy * texcoord.xy;
+			//float2 uv = float2(BUFFER_WIDTH/BUFFER_HEIGHT, 1);// / float2( 512.0f, 512.0f ); // create multiplier on texcoord so that we can use 1px size reads on gaussian noise texture (since much smaller than screen)
+			//uv = float2(BUFFER_WIDTH, BUFFER_HEIGHT);// / float2( 512.0f, 512.0f );
+			//uv.xy = uv.xy * texcoord.xy*FogTextureSize;
+
+			//uv = uv*(1-depth);
 			
-			float noise = tex2D(SamplerFogNoise, uv).x; // read, uv is scaled, sampler is set to tile noise texture (WRAP)
+			//float noise = tex2D(SamplerFogNoise, uv).x; // read, uv is scaled, sampler is set to tile noise texture (WRAP)
 
 			//fogFactor= clamp(saturate(-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y + depth*(noise) - FogStart) * FogCurve, 0.0, MaxFogFactor+depth);
 			//fogFactor= clamp(saturate(-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y + depth - FogStart) * FogCurve, 0.0, saturate(MaxFogFactor+depth));//MaxFogFactor);
@@ -863,7 +870,7 @@ void PS_Otis_Original_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 
 			//fogFactor= 1-(texcoord.x/100<depth ? 0:1);//MaxFogFactor);
 
 
-			if (fogFactor!=0 && Texture) fogFactor= saturate(fogFactor-(1-fogFactor)*noise);
+			//if (fogFactor!=0 && UseFogTexture) fogFactor= saturate(fogFactor-(1-fogFactor)*noise);
 
 		    //fogFactor =saturate(fogFactor + lerp( -0.5/255.0, 0.5/255.0, noise)); // apply dither
 
@@ -872,15 +879,34 @@ void PS_Otis_Original_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 
 
 		}
 		case 1:{
-			fogFactor= 1-CalculateDepthDiffCoC(texcoord.xy);break;
+			fogFactor= 1-CalculateDepthDiffCoC(texcoord.xy);
+			break;
+		}
+		case 2:{
+			fogFactor= PS_DepthSlice(texcoord.xy);
+			break;
 		}
 	}
 
-	if (FlipFog) {fogFactor = 1-clamp(saturate(depth - FogStart) * FogCurve, 0.0, 1-MaxFogFactor);}
+	if (fogFactor!=0 && UseFogTexture){
+		float2 uv = float2(BUFFER_WIDTH/BUFFER_HEIGHT, 1);// / float2( 512.0f, 512.0f ); // create multiplier on texcoord so that we can use 1px size reads on gaussian noise texture (since much smaller than screen)
+		//uv = float2(BUFFER_WIDTH, BUFFER_HEIGHT);// / float2( 512.0f, 512.0f );
+		uv.xy = uv.xy * texcoord.xy*FogTextureSize;
+
+		if (UseFogTextureDepth) uv = uv*(1-depth);
+		
+		float noise = tex2D(SamplerFogNoise, uv).x; // read, uv is scaled, sampler is set to tile noise texture (WRAP)
+			
+		fogFactor= saturate(fogFactor-(1-fogFactor)*noise);
+	}
+
+	//if (FlipFog) fogFactor = 1-clamp(saturate(depth - FogStart) * FogCurve, 0.0, 1-MaxFogFactor);
+	if (FlipFog) fogFactor = 1-fogFactor;
 
 	//Takes the color sampled or the one from the color picker
-	float3 ColorAreal= ColorpA ? tex2D(ColorAsavernew, float2(0,0)).rgb : ColorA.rgb;
-	float3 ColorBreal= ColorpB ? tex2D(ColorBsavernew, float2(0,0)).rgb : ColorB.rgb;
+
+	float3 ColorAreal= UseColorPickerA ? tex2D(ReShade::BackBuffer, axisColorASelectAxis).rgb : ColorA.rgb;
+	float3 ColorBreal= UseColorPickerB ? tex2D(ReShade::BackBuffer, axisColorBSelectAxis).rgb : ColorB.rgb;
 	
 	switch (GradientType){
 		case 0: {
@@ -925,30 +951,14 @@ void PS_Otis_Original_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 
 			break;
 		}
 	}
-}
 
-void ColorAgrab(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 Image : SV_Target)
-{
-	// Grab the color selected 
-	Image= LeftMouseDown ? tex2D(ReShade::BackBuffer, MouseCoords*ReShade::PixelSize).rgb : tex2D(ColorAsaverold, float2(0,0)).rgb;
-}
+	if(UseColorPickerA && drawColorASelectON){
+		fragment=lerp(fragment,float4(1.0, 0.0, 0.0, 1.0),(abs(texcoord.x - axisColorASelectAxis.x)<0.0005 || abs(texcoord.y - axisColorASelectAxis.y)<0.001 ) ? 1 : 0);
+	}
 
-void ColorAcopy(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 Image : SV_Target)
-{
-	// Grab the color selected 
-	Image = tex2D(ColorAsavernew, float2(0,0)).rgb;
-}
-
-void ColorBgrab(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 Image : SV_Target)
-{
-	// Grab the color selected 
-	Image = LeftMouseDown ? tex2D(ReShade::BackBuffer, MouseCoords*ReShade::PixelSize).rgb : tex2D(ColorBsaverold, float2(0,0)).rgb;
-}
-
-void ColorBcopy(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 Image : SV_Target)
-{
-	// Grab the color selected 
-	Image = tex2D(ColorBsavernew, float2(0,0)).rgb;
+	if(UseColorPickerB && drawColorBSelectON){
+		fragment=lerp(fragment,float4(0.0, 1.0, 0.0, 1.0),(abs(texcoord.x - axisColorBSelectAxis.x)<0.0005 || abs(texcoord.y - axisColorBSelectAxis.y)<0.001 ) ? 1 : 0);
+	}
 }
 
   //////////////
@@ -957,33 +967,6 @@ void ColorBcopy(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3
 
 technique CanvasFog
 {
-	pass ColorpickercopyA{
-		VertexShader = PostProcessVS;
-		PixelShader = ColorAcopy;
-		RenderTarget = ATexture2;
-	}
-	pass ColorpickerA{
-		VertexShader = PostProcessVS;
-		PixelShader = ColorAgrab;
-		RenderTarget = ATexture1;
-	}
-	pass ColorpickercopyB{
-		VertexShader = PostProcessVS;
-		PixelShader = ColorBcopy;
-		RenderTarget = BTexture2;
-	}
-	pass ColorpickerB{
-		VertexShader = PostProcessVS;
-		PixelShader = ColorBgrab;
-		RenderTarget = BTexture1;
-	}
-	pass Otis_AFG_PassBloom0
-	{
-		VertexShader = PostProcessVS;
-		PixelShader = PS_Otis_AFG_PerformBloom;
-		RenderTarget = Otis_BloomTarget;
-	}
-	
 	pass Otis_AFG_PassBlend
 	{
 		VertexShader = PostProcessVS;
