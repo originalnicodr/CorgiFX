@@ -13,11 +13,8 @@
 // By Otis / Infuse Project
 ///////////////////////////////////////////////////////////////////
 
-  ////////////
- /// MENU ///
-////////////
-
 #include "ReShadeUI.fxh"
+#include "ReShade.fxh"
 
 uniform float AlphaA < 
 	ui_label = "Alpha gradient A";
@@ -41,14 +38,14 @@ uniform int GradientType <
 uniform float Scale < 
 	ui_label = "Gradient sharpness";
 	ui_category = "Gradient controls";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = -10.0; ui_max = 10.0; ui_step = 0.01;
 > = 1.0;
 
 uniform float Axis < 
 	ui_label = "Angle";
 	ui_category = "Linear gradient control";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.1;
 	ui_min = -180.0; ui_max = 180.0;
 > = 0.0;
@@ -56,7 +53,7 @@ uniform float Axis <
 uniform float Offset < 
 	ui_label = "Position";
 	ui_category = "Linear gradient control";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.002;
 	ui_min = -0.5; ui_max = 0.5;
 > = 0.0;
@@ -64,15 +61,16 @@ uniform float Offset <
 uniform float Size < 
 	ui_label = "Size";
 	ui_category = "Radial gradient control";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.002;
 	ui_min = 0.0; ui_max = 1.0;
+	ui_category_closed = true;
 > = 0.0;
 
 uniform float2 Originc <
 	ui_label = "Position";
 	ui_category = "Radial gradient control";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = -1.5; ui_max = 2;
 > = float2(0.5, 0.5);
@@ -80,7 +78,7 @@ uniform float2 Originc <
 uniform float2 Modifierc <
 	ui_label = "Modifier";
 	ui_category = "Radial gradient control";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0.000; ui_max = 10.000;
 > = float2(1.0, 1.0);
@@ -88,7 +86,7 @@ uniform float2 Modifierc <
 uniform float AnguloR <
 	ui_label = "Angle";
 	ui_category = "Radial gradient control";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0; ui_max = 360;
 > = 0.0;
@@ -96,15 +94,16 @@ uniform float AnguloR <
 uniform float SizeS <
 	ui_label = "Size";
 	ui_category = "Strip gradient control";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0; ui_max = 100;
+	ui_category_closed = true;
 > = 0.0;
 
 uniform float2 PositionS <
 	ui_label = "Position";
 	ui_category = "Strip gradient control";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0; ui_max = 1;
 > = float2(0.5, 0.5);
@@ -112,7 +111,7 @@ uniform float2 PositionS <
 uniform float AnguloS <
 	ui_label = "Angle";
 	ui_category = "Strip gradient control";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0; ui_max = 360;
 > = 0.0;
@@ -121,16 +120,17 @@ uniform float AnguloS <
 
 uniform float Sized < 
 	ui_label = "Size";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.002;
 	ui_min = 0.0; ui_max = 7.0;
 	ui_category = "Diamond gradient control";
+	ui_category_closed = true;
 > = 0.0;
 
 uniform float2 Origind <
 	ui_category = "Diamond gradient control";
 	ui_label = "Position";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = -1.5; ui_max = 2;
 > = float2(0.5, 0.5);
@@ -138,7 +138,7 @@ uniform float2 Origind <
 uniform float2 Modifierd <
 	ui_category = "Diamond gradient control";
 	ui_label = "Modifier";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0.000; ui_max = 10.000;
 > = float2(1.0, 1.0);
@@ -146,7 +146,7 @@ uniform float2 Modifierd <
 uniform float Angulod <
 	ui_category = "Diamond gradient control";
 	ui_label = "Angle";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0; ui_max = 360;
 > = 0.0;
@@ -154,10 +154,11 @@ uniform float Angulod <
 
 
 uniform int FogType <
-	ui_label = "Fog type";
 	ui_type = "combo";
+	ui_label = "Fog type";
 	ui_category = "Fog controls";
-	ui_items = "Adaptive Fog\0Emphasize Fog\0";
+	ui_items = "Adaptive Fog\0Emphasize Fog\0Depth Slicer Fog\0";
+	ui_category_closed = true;
 > = false;
 
 uniform bool FlipFog <
@@ -168,7 +169,7 @@ uniform bool FlipFog <
 uniform float MaxFogFactor <
 	ui_label = "Max Fog Factor";
 	ui_category = "AdaptiveFog controls";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0.000; ui_max=1.000;
 	ui_step = 0.001;
 	ui_tooltip = "The maximum fog factor. 1.0 makes distant objects completely fogged out, a lower factor will shimmer them through the fog.";
@@ -177,7 +178,7 @@ uniform float MaxFogFactor <
 uniform float FogCurve <
 	ui_label = "Fog CurveFactor";
 	ui_category = "AdaptiveFog controls";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.01;
 	ui_min = 0.00; ui_max=175.00;
 	ui_tooltip = "The curve how quickly distant objects get fogged. A low value will make the fog appear just slightly. A high value will make the fog kick in rather quickly. The max value in the rage makes it very hard in general to view any objects outside fog.";
@@ -186,7 +187,7 @@ uniform float FogCurve <
 uniform float FogStart <
 	ui_label = "Fog Start Factor";
 	ui_category = "AdaptiveFog controls";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0.000; ui_max=1.000;
 	ui_tooltip = "Start of the fog. 0.0 is at the camera, 1.0 is at the horizon, 0.5 is halfway towards the horizon. Before this point no fog will appear.";
@@ -194,7 +195,8 @@ uniform float FogStart <
 
 uniform float FocusDepth <
 	ui_category = "EmphasizeFog controls";
-	ui_type = "slider";
+	ui_category_closed = true;
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0.000; ui_max = 1.000;
 	ui_tooltip = "Manual focus depth of the point which has the focus. Range from 0.0, which means camera is the focus plane, till 1.0 which means the horizon is focus plane.";
@@ -202,7 +204,7 @@ uniform float FocusDepth <
 
 uniform float FocusRangeDepth <
 	ui_category = "EmphasizeFog controls";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0.0; ui_max = 1.000;
 	ui_tooltip = "The depth of the range around the manual focus depth which should be emphasized. Outside this range, de-emphasizing takes place";
@@ -210,7 +212,7 @@ uniform float FocusRangeDepth <
 
 uniform float FocusEdgeDepth <
 	ui_category = "EmphasizeFog controls";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_step = 0.001;
 	ui_min = 0.000; ui_max = 1.000;
 	ui_tooltip = "The depth of the edge of the focus range. Range from 0.00, which means no depth, so at the edge of the focus range, the effect kicks in at full force,\ntill 1.00, which means the effect is smoothly applied over the range focusRangeEdge-horizon.";
@@ -218,7 +220,7 @@ uniform float FocusEdgeDepth <
 
 uniform float FogCurveE <
 	ui_label = "Sharpness";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0.00; ui_max=1;
 	ui_step = 0.01;
 	ui_category = "EmphasizeFog controls";
@@ -231,44 +233,58 @@ uniform bool Spherical <
 
 uniform int Sphere_FieldOfView <
 	ui_category = "EmphasizeFog controls";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 1; ui_max = 180;
 	ui_tooltip = "Specifies the estimated Field of View you are currently playing with. Range from 1, which means 1 Degree, till 180 which means 180 Degree (half the scene).\nNormal games tend to use values between 60 and 90.";
 > = 75;
 
 uniform float Sphere_FocusHorizontal <
 	ui_category = "EmphasizeFog controls";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0; ui_max = 1;
 	ui_tooltip = "Specifies the location of the focuspoint on the horizontal axis. Range from 0, which means left screen border, till 1 which means right screen border.";
 > = 0.5;
 
 uniform float Sphere_FocusVertical <
 	ui_category = "EmphasizeFog controls";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0; ui_max = 1;
 	ui_tooltip = "Specifies the location of the focuspoint on the vertical axis. Range from 0, which means upper screen border, till 1 which means bottom screen border.";
 > = 0.5;
 
-uniform float3 BlendColor <
-	ui_category = "EmphasizeFog controls";
-	ui_type = "color";
-	ui_tooltip = "Specifies the blend color to blend with the rest of the scene. in (Red, Green, Blue). Use dark colors to darken further away objects";
-> = float3(0.0, 0.0, 0.0);
-
-uniform float BlendFactor <
-	ui_category = "EmphasizeFog controls";
-	ui_type = "slider";
-	ui_min = 0.0; ui_max = 1.0;
-	ui_tooltip = "Specifies the factor BlendColor is blended. Range from 0.0, which means no color blending, till 1.0 which means full blend of the BlendColor";
-> = 0.0;
-
-uniform float EffectFactor <
-	ui_category = "EmphasizeFog controls";
-	ui_type = "slider";
-	ui_min = 0.0; ui_max = 1.0;
-	ui_tooltip = "Specifies the factor the blending is applied. Range from 0.0, which means the effect is off (normal image), till 1.0 which means the blended parts are\nfull blended";
-> = 0.9;
+uniform float depth_near <
+		ui_category_closed = true;
+        ui_type = "drag";
+        ui_label = "Depth Near Plane";
+        ui_tooltip = "Depth Near Plane";
+        ui_category = "Depth Slicer Fog controls";
+        ui_min = 0.0;
+        ui_max = 1.0;
+        > = 0.0;
+uniform float depthpos <
+        ui_type = "drag";
+        ui_label = "Depth Position";
+        ui_tooltip = "Depth Position";
+        ui_category = "Depth Slicer Fog controls";
+        ui_min = 0.0;
+        ui_max = 1.0;
+        > = 0.200;
+uniform float depth_far <
+        ui_type = "drag";
+        ui_label = "Depth Far Plane";
+        ui_tooltip = "Depth Far Plane";
+        ui_category = "Depth Slicer Fog controls";
+        ui_min = 0.0;
+        ui_max = 1.0;
+        > = 0.0;
+uniform float depth_smoothing <
+        ui_type = "drag";
+        ui_label = "Depth Smoothing";
+        ui_tooltip = "Depth Smoothing";
+        ui_category = "Depth Slicer Fog controls";
+        ui_min = 0.0;
+        ui_max = 1.0;
+        > = 0.005;
 
 uniform bool ShowDebug <
     //ui_category = ;
@@ -278,17 +294,19 @@ uniform bool ShowDebug <
 
 
 uniform float2 FogRotationAngle  <
+	ui_category_closed = true;
+	ui_text = "Fog Rotation (AdaptiveFog only for now)";
     ui_label = "Angle of fog rotation";
-	ui_type = "slider";
-	ui_min = -1; ui_max = 1; ui_step = 0.01;
-	ui_category = "Fog Rotation (experimental)";
+	ui_type = "drag";
+	ui_min = -50; ui_max = 50; ui_step = 0.01;
+	ui_category = "Experimental";
 > = float2(0, 0);
 
 uniform float2 FogRotationCenter  <
     ui_label = "Center of rotation";
-	ui_type = "slider";
+	ui_type = "drag";
 	ui_min = 0; ui_max = 1;
-	ui_category = "Fog Rotation (experimental)";
+	ui_category = "Experimental";
 > = float2(0.5, 0.5);
 
 #ifndef M_PI
@@ -312,25 +330,8 @@ float2 rotate(float2 v,float2 o, float a){
 	return v2;
 }
 
-//////////////////////////////////////
-// textures
-//////////////////////////////////////
-texture   Otis_BloomTarget 	{ Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RGBA8;};
 texture BeforeTarget { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; };
-
-//////////////////////////////////////
-// samplers
-//////////////////////////////////////
-sampler2D Otis_BloomSampler { Texture = Otis_BloomTarget; };
 sampler BeforeSampler { Texture = BeforeTarget; };
-
-  //////////////
- /// SHADER ///
-//////////////
-
-//Mouse inputs to select color
-
-#include "ReShade.fxh"
 
 //Emphasize algorithm from Otis
 float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
@@ -358,7 +359,21 @@ float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
 	if (depthdiff > desaturateFullRange)
 		return saturate(1.0);
 	else
-		return saturate(smoothstep(FocusRangeDepth, desaturateFullRange, (depthdiff*(1-FogCurveE))));
+		return saturate(smoothstep(0, desaturateFullRange, (depthdiff*(1-FogCurveE))));
+}
+
+//credits to prod80
+float PS_DepthSlice(float2 texcoord : TEXCOORD)
+{
+    float4 color      = tex2D( ReShade::BackBuffer, texcoord );
+    float depth       = ReShade::GetLinearizedDepth( texcoord ).x;
+    float depth_np    = depthpos - depth_near;
+    float depth_fp    = depthpos + depth_far;
+    float dn          = smoothstep( depth_np - depth_smoothing, depth_np, depth );
+    float df          = 1.0f - smoothstep( depth_fp, depth_fp + depth_smoothing, depth );
+    
+    float opacity    = 1.0f - ( dn * df );
+	return opacity;
 }
 
 void BeforePS(float4 vpos : SV_Position, float2 UvCoord : TEXCOORD, out float3 Image : SV_Target)
@@ -376,15 +391,20 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float4 f
 	switch(FogType){
 		case 0:{
 
-			float2 uv = float2(BUFFER_WIDTH, BUFFER_HEIGHT) / float2( 512.0f, 512.0f ); // create multiplier on texcoord so that we can use 1px size reads on gaussian noise texture (since much smaller than screen)
-		    uv.xy = uv.xy * texcoord.xy;
+			//float2 uv = float2(BUFFER_WIDTH, BUFFER_HEIGHT) / float2( 512.0f, 512.0f ); // create multiplier on texcoord so that we can use 1px size reads on gaussian noise texture (since much smaller than screen)
+		    //uv.xy = uv.xy * texcoord.xy;
 
-			//fogFactor=clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor);break;
-			fogFactor= clamp((-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y+depth - FogStart) * FogCurve, 0.0, saturate(MaxFogFactor+depth));//MaxFogFactor);
+			float2 rotationfactor=float2(0.5,0.5)-(texcoord - FogRotationCenter)*FogRotationAngle;
+			fogFactor= clamp(((rotationfactor.x + rotationfactor.y)*depth - FogStart) * FogCurve, 0.0, MaxFogFactor);
 			break;
 		}
 		case 1:{
-			fogFactor= 1-CalculateDepthDiffCoC(texcoord.xy);break;
+			fogFactor= 1-CalculateDepthDiffCoC(texcoord.xy);
+			break;
+		}
+		case 2:{
+			fogFactor= PS_DepthSlice(texcoord.xy);
+			break;
 		}
 	}
 
@@ -443,11 +463,9 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float4 f
 			//float gradient = 1 - pow(max(abs((uv.x - Origind.x)/Sized), abs((uv.y - Origind.y)/Sized)),exp(Scale));
 
 
-			//funca sin modificadores
 			//float2 uv=rotate(float2(((texcoord.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT)*Modifierd.x,texcoord.y*Modifierd.y),Origind,angle);
 			//float gradient = 1 - pow(max(abs((uv.x - Origind.x)/Sized), abs((uv.y - Origind.y)/Sized)),exp(Scale));
 			fragment=lerp(tex2D(BeforeSampler, texcoord).rgb, tex2D(ReShade::BackBuffer, texcoord).rgb, fogFactor*lerp(AlphaA, AlphaB, saturate(gradient)));
-
 			if (ShowDebug){
 				fragment=fogFactor*lerp(AlphaA, AlphaB, saturate(gradient));
 			}
@@ -455,10 +473,6 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float4 f
 		}
     }
 }
-
-  //////////////
- /// OUTPUT ///
-//////////////
 
 technique BeforeCanvasMask < ui_tooltip = "Place this technique before effects you want compare.\nThen move technique 'After'"; >
 {

@@ -110,7 +110,6 @@ uniform float Axis <
 	ui_step = 0.1;
 	ui_min = -180.0; ui_max = 180.0;
 	ui_category = "Linear gradient control";
-	//ui_spacing = 5;
 > = 0.0;
 
 uniform float Offset < 
@@ -228,11 +227,6 @@ uniform bool FlipFog <
 	ui_label = "Invert fog";
 	ui_category = "Fog controls";
 > = false;
-
-//uniform bool UseAFBloom<
-//	ui_label = "Use AdaptiveFog Bloom";
-//	ui_category = "AdaptiveFog controls";
-//> = false;
 
 uniform float MaxFogFactor <
 	ui_type = "drag";
@@ -355,13 +349,12 @@ uniform float depth_smoothing <
         ui_max = 1.0;
         > = 0.005;
 
-
 uniform float2 FogRotationAngle  <
 	ui_category_closed = true;
 	ui_text = "Fog Rotation (AdaptiveFog only for now)";
     ui_label = "Angle of fog rotation";
 	ui_type = "drag";
-	ui_min = -1; ui_max = 1; ui_step = 0.01;
+	ui_min = -50; ui_max = 50; ui_step = 0.01;
 	ui_category = "Experimental";
 > = float2(0, 0);
 
@@ -371,6 +364,21 @@ uniform float2 FogRotationCenter  <
 	ui_min = 0; ui_max = 1;
 	ui_category = "Experimental";
 > = float2(0.5, 0.5);
+
+uniform float FogRotationDepth  <
+    ui_label = "Fog Depth Factor";
+	ui_type = "drag";
+	ui_min = 0; ui_max = 1;
+	ui_category = "Experimental";
+> = 0;
+
+uniform float FogRotationDepthVisibility  <
+    ui_label = "Fog Rotation Visibility";
+	ui_type = "drag";
+	ui_min = 0; ui_max = 25;
+	ui_step = 0.5;
+	ui_category = "Experimental";
+> = 25;
 
 uniform bool UseFogTexture <
 	ui_label = "Use fog Texture";
@@ -789,94 +797,10 @@ void PS_Otis_Original_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 
 	const float depth = ReShade::GetLinearizedDepth(texcoord).r;
 	float fogFactor;
 	switch(FogType){
-		//case 0:{
-		//	fogFactor=clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor);break;
-		//}
 		case 0:{
-			//fogFactor=clamp(saturate(-(texcoord.x+FogRotationCenter.x-0.5)*sin(radians(FogRotationAngle.x))-(texcoord.y+FogRotationCenter.y-0.5)*sin(radians(FogRotationAngle.y)) + depth - FogStart) * FogCurve, 0.0, MaxFogFactor);break;
-			//fogFactor= clamp(saturate(-(texcoord.x-FogRotationCenter.x)*sin(radians(FogRotationAngle.x))-(texcoord.y-FogRotationCenter.y)*sin(radians(FogRotationAngle.y)) + depth - FogStart) * FogCurve, 0.0, MaxFogFactor);break;
-
-			//Para el ruido
-
-			/*
-			float t = Timer * 0.0022337;
-			const float PI = 3.1415927;
-	
-			//PRNG 2D - create two uniform noise values and save one DP2ADD
-			float seed = dot(texcoord, float2(12.9898, 78.233));// + t;
-			float sine = sin(seed);
-			float cosine = cos(seed);
-			float uniform_noise1 = frac(sine * 43758.5453 + t); //I just salt with t because I can
-			float uniform_noise2 = frac(cosine * 53758.5453 - t); // and it doesn't cost any extra ASM
-
-			fogFactor= clamp(saturate(-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y + depth - FogStart) * FogCurve, 0.0, MaxFogFactor)*uniform_noise2;
-			*/
-			
-
-
-
-			/*
-			float Pi = 6.28318530718; // Pi*2
-    
-    		// GAUSSIAN BLUR SETTINGS {{{
-    		float Directions = 16.0; // BLUR DIRECTIONS (Default 16.0 - More is better but slower)
-    		float Quality = 3.0; // BLUR QUALITY (Default 4.0 - More is better but slower)
-    		float Size = 8.0; // BLUR SIZE (Radius)
-    		// GAUSSIAN BLUR SETTINGS }}}
-
-    		vec2 Radius = 0.5//Size/iResolution.xy;
-
-    		// Pixel colour
-    		vec4 Color = tex2D(ReShade::BackBuffer, texcoord).rgb;
-
-    		// Blur calculations
-    		for( float d=0.0; d<Pi; d+=Pi/Directions)
-    		{
-				for(float i=1.0/Quality; i<=1.0; i+=1.0/Quality)
-    		    {
-					Color += texture( iChannel0, texcoord+vec2(cos(d),sin(d))*Radius*i);		
-    		    }
-    		}
-
-    		// Output to screen
-    		Color /= Quality * Directions - 15.0;
-			*/
-
-			//fogFactor= clamp(saturate(-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y + depth - FogStart) * FogCurve, 0.0, MaxFogFactor);
-			
-			//fogFactor=cellular(fogFactor);
-			//break;
-
-			//float2 uv = float2(BUFFER_WIDTH/BUFFER_HEIGHT, 1);// / float2( 512.0f, 512.0f ); // create multiplier on texcoord so that we can use 1px size reads on gaussian noise texture (since much smaller than screen)
-			//uv = float2(BUFFER_WIDTH, BUFFER_HEIGHT);// / float2( 512.0f, 512.0f );
-			//uv.xy = uv.xy * texcoord.xy*FogTextureSize;
-
-			//uv = uv*(1-depth);
-			
-			//float noise = tex2D(SamplerFogNoise, uv).x; // read, uv is scaled, sampler is set to tile noise texture (WRAP)
-
-			//fogFactor= clamp(saturate(-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y + depth*(noise) - FogStart) * FogCurve, 0.0, MaxFogFactor+depth);
-			//fogFactor= clamp(saturate(-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y + depth - FogStart) * FogCurve, 0.0, saturate(MaxFogFactor+depth));//MaxFogFactor);
-
-			fogFactor= clamp((-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y+depth - FogStart) * FogCurve, 0.0, saturate(MaxFogFactor+depth));//MaxFogFactor);
-
-			//fogFactor = clamp(saturate(depth - FogStart) * FogCurve, 0.0, MaxFogFactor); //original adaptive fog
-			//fogFactor=(1-depth*texcoord.y);
-
-			//fogFactor=depth>texcoord.y/5 ? 1 : 0;
-
-			//fogFactor=saturate(1-exp(-(texcoord.x-FogRotationCenter.x)*FogRotationAngle.x-(texcoord.y-FogRotationCenter.y)*FogRotationAngle.y-100 * depth)); //tiene que ser negativo el FogRotationCenter.x (que estoy usando de sigma)
-			//fogFactor=1-exp(0.000001* saturate(depth - FogStart));
-			//fogFactor= 1-(texcoord.x/100<depth ? 0:1);//MaxFogFactor);
-
-
-			//if (fogFactor!=0 && UseFogTexture) fogFactor= saturate(fogFactor-(1-fogFactor)*noise);
-
-		    //fogFactor =saturate(fogFactor + lerp( -0.5/255.0, 0.5/255.0, noise)); // apply dither
-
+			float2 rotationfactor=float2(0.5,0.5)-(texcoord - FogRotationCenter)*FogRotationAngle;
+			fogFactor= clamp(((rotationfactor.x + rotationfactor.y)*depth*(1-FogRotationDepth) - FogStart) * FogCurve, 0.0, saturate(MaxFogFactor*FogRotationDepthVisibility*depth));
 			break;
-			
-
 		}
 		case 1:{
 			fogFactor= 1-CalculateDepthDiffCoC(texcoord.xy);
