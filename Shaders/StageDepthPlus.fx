@@ -91,7 +91,13 @@ namespace StageDepthPlus
 	    ui_category = "Controls";
 	> = false;
 
+	uniform bool RepeatTextureEnabled < 
+		ui_label = "Repeat texture";
+	    ui_category = "Controls";
+	> = false;
+
 	uniform float Stage_Opacity <
+		ui_category = "Controls";
 	    ui_type = "slider";
 	    ui_label = "Opacity";
 	    ui_min = 0.0; ui_max = 1.0;
@@ -100,6 +106,7 @@ namespace StageDepthPlus
 	> = 1.0;
 
 	uniform float2 Layer_Scale <
+		ui_category = "Controls";
 	  	ui_type = "slider";
 		ui_label = "Scale";
 		ui_step = 0.01;
@@ -107,6 +114,7 @@ namespace StageDepthPlus
 	> = (1.001,1.001);
 
 	uniform float2 Layer_Pos <
+		ui_category = "Controls";
 	  	ui_type = "slider";
 		ui_label = "Position";
 		ui_step = 0.001;
@@ -114,6 +122,7 @@ namespace StageDepthPlus
 	> = (0,0);	
 
 	uniform float Axis <
+		ui_category = "Controls";
 		ui_type = "slider";
 		ui_label = "Angle";
 		ui_step = 0.1;
@@ -121,6 +130,7 @@ namespace StageDepthPlus
 	> = 0.0;
 
 	uniform int BlendM <
+		ui_category = "Controls";
 		ui_type = "combo";
 		ui_label = "Blending Mode";
 		ui_tooltip = "Select the blending mode used with the gradient on the screen.";
@@ -128,20 +138,33 @@ namespace StageDepthPlus
 	> = 0;
 
 	uniform float Stage_depth <
+		ui_category = "Controls";
 		ui_type = "slider";
 		ui_min = 0.0; ui_max = 1.0;
 		ui_label = "Depth";
 	> = 0.97;
 
+	uniform float depth_smoothing <
+		ui_category = "Controls";
+        ui_type = "slider";
+        ui_label = "Depth Smoothing";
+        ui_tooltip = "Depth Smoothing";
+        ui_min = 0.0;
+        ui_max = 1.0;
+        > = 0.005;
 
-	
-uniform float3 ProjectorPos <
-	ui_text = "Experimental Features\n--------------------------------------------";
-	ui_label = "Projector Position";
-	ui_type = "drag";
-	ui_step = 0.001;
-	ui_min = float3(-100,-100,-100); ui_max = float3(100,100,100);
-> = float3(0.5,0.5,0);
+	uniform bool debug_depth < 
+		ui_category = "Controls";
+		ui_label = "Debug Depth";
+	> = false;
+
+	uniform float3 ProjectorPos <
+		ui_text = "Experimental Features\n--------------------------------------------";
+		ui_label = "Projector Position";
+		ui_type = "drag";
+		ui_step = 0.001;
+		ui_min = float3(-100,-100,-100); ui_max = float3(100,100,100);
+	> = float3(0.5,0.5,0);
 
 	//////////////////////////////////////
 	// textures
@@ -179,7 +202,7 @@ uniform float3 ProjectorPos <
 	
 	//texture Stageplus_texture <source=StageTexPlus;> { Width = BUFFER_WIDTH*3; Height = BUFFER_HEIGHT*3; Format=TEXFORMAT; };
 
-	texture Test_Tex <
+	texture Depth_Map_tex <
 	    source = StageDepthTex;
 	> {
 	    Format = RGBA8;
@@ -195,16 +218,35 @@ uniform float3 ProjectorPos <
 	    Height = STAGE_TEXTURE_HEIGHT;
 	};
 
-	sampler Test_Sampler
+
+
+	sampler Depth_Map_Sampler_Repeat
 	{
-	    Texture  = Test_Tex;
-	    AddressU = BORDER;
-	    AddressV = BORDER;
+	    Texture  = Depth_Map_tex;
+		AddressU = REPEAT;
+		AddressV = REPEAT;
+
 	};
 
-	sampler Stageplus_sampler { Texture = Stageplus_texture; };
+	sampler Stageplus_sampler_Repeat {
+		Texture = Stageplus_texture;
+		AddressU = REPEAT;
+		AddressV = REPEAT;
+	};
 
-	sampler Mask_sampler { Texture = Mask_tex; };
+	sampler Mask_sampler_Repeat {
+		Texture = Mask_tex;
+		AddressU = REPEAT;
+		AddressV = REPEAT;
+	};
+
+
+	sampler Depth_Map_Sampler	{Texture  = Depth_Map_tex; };
+	sampler Stageplus_sampler {Texture = Stageplus_texture; };
+	sampler Mask_sampler {Texture = Mask_tex; };
+
+
+
 
 	/*
 	#if ((3*BUFFER_WIDTH <= 8192) && (3*BUFFER_WIDTH <= 8192))
@@ -442,7 +484,6 @@ uniform float3 ProjectorPos <
 
 	void PS_StageDepth(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, out float4 color : SV_Target)
 	{
-
 		static const float3x3 ProjectionMatrix = float3x3(1, 0, ProjectorPos.x-0.5,
 										  0, 1, ProjectorPos.y-0.5,
 										  0, 0, ProjectorPos.z
@@ -469,53 +510,68 @@ uniform float3 ProjectorPos <
 		uvtemp=(rotate(uvtemp,Layer_Posreal+0.5,radians(Axis))*Layer_Scalereal-((Layer_Posreal+0.5)*Layer_Scalereal-0.5));
 
 
+		float4 layer  = RepeatTextureEnabled ? tex2D(Stageplus_sampler_Repeat, uvtemp).rgba : tex2D(Stageplus_sampler, uvtemp).rgba;
 
-
-
-		float4 layer  = tex2D(Stageplus_sampler, uvtemp).rgba;
+		
 		if (UseMask){
-			float4 mask= tex2D(Mask_sampler, uvtemp).rgba;
+			float4 mask= RepeatTextureEnabled ? tex2D(Mask_sampler_Repeat, uvtemp).rgba :tex2D(Mask_sampler, uvtemp).rgba;
 			//If there is a weird result check if (mask.a==1) before applying the mask to the layer.
 			layer=float4(layer.rgb, min(layer.a,mask.r));
 		}
 
 		float4 precolor   = lerp(backbuffer, layer, layer.a * Stage_Opacity);
 
-		float ImageDepthMap_depth = DepthMapY ? tex2D(Test_Sampler,uvtemp).x : 0;
+		float ImageDepthMap_depth = DepthMapY ? (RepeatTextureEnabled ? tex2D(Depth_Map_Sampler_Repeat,uvtemp).x : tex2D(Depth_Map_Sampler,uvtemp).x) : 0;
 
-		if( depth < saturate(ImageDepthMap_depth+Stage_depth))
-		{	
-			if (uvtemp.x>0 && uvtemp.y>0  && uvtemp.x<1 && uvtemp.y<1){
-				switch (BlendM){
-					case 0:{color = lerp(backbuffer.rgb, precolor.rgb, layer.a * Stage_Opacity);break;}
-					case 1:{color = lerp(backbuffer, float4 (Multiply(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 2:{color = lerp(backbuffer, float4 (Screen(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 3:{color = lerp(backbuffer, float4 (Overlay(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 4:{color = lerp(backbuffer, float4 (Darken(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 5:{color = lerp(backbuffer, float4 (Lighten(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 6:{color = lerp(backbuffer, float4 (ColorDodge(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 7:{color = lerp(backbuffer, float4 (ColorBurn(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 8:{color = lerp(backbuffer, float4 (HardLight(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 9:{color = lerp(backbuffer, float4 (SoftLight(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 10:{color = lerp(backbuffer, float4 (Difference(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 11:{color = lerp(backbuffer, float4 (Exclusion(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 12:{color = lerp(backbuffer, float4 (Hue(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 13:{color = lerp(backbuffer, float4 (Saturation(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 14:{color = lerp(backbuffer, float4 (ColorM(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 15:{color = lerp(backbuffer, float4 (Luminosity(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 16:{color = lerp(backbuffer, float4 (Lineardodge(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 17:{color = lerp(backbuffer, float4 (Linearburn(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 18:{color = lerp(backbuffer, float4 (Vividlight(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 19:{color = lerp(backbuffer, float4 (Linearlight(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 20:{color = lerp(backbuffer, float4 (Pinlight(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 21:{color = lerp(backbuffer, float4 (Hardmix(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 22:{color = lerp(backbuffer, float4 (Reflect(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-					case 23:{color = lerp(backbuffer, float4 (Glow(backbuffer.rgb, precolor.rgb),backbuffer.a), layer.a * Stage_Opacity);break;}
-				}
-			}
+
+		float combined_depth = saturate(Stage_depth + ImageDepthMap_depth);
+
+		float depth_np    = combined_depth - 1;
+   		float depth_fp    = combined_depth;
+    	float dn          = smoothstep( depth_np - depth_smoothing, depth_np, depth );
+    	float df          = 1.0f - smoothstep( depth_fp, depth_fp + depth_smoothing, depth );
+    
+    	float gradient_depth = ( dn * df );
+
+		float total_alpha = layer.a * Stage_Opacity * gradient_depth;
+
+		if(debug_depth){
+			color = total_alpha;
+			return;
 		}
 
+		if(total_alpha==0) return;
+
+		switch (BlendM){
+			case 0:{color = lerp(backbuffer.rgb, precolor.rgb, total_alpha);break;}
+			case 1:{color = lerp(backbuffer, float4 (Multiply(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 2:{color = lerp(backbuffer, float4 (Screen(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 3:{color = lerp(backbuffer, float4 (Overlay(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 4:{color = lerp(backbuffer, float4 (Darken(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 5:{color = lerp(backbuffer, float4 (Lighten(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 6:{color = lerp(backbuffer, float4 (ColorDodge(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 7:{color = lerp(backbuffer, float4 (ColorBurn(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 8:{color = lerp(backbuffer, float4 (HardLight(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 9:{color = lerp(backbuffer, float4 (SoftLight(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 10:{color = lerp(backbuffer, float4 (Difference(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 11:{color = lerp(backbuffer, float4 (Exclusion(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 12:{color = lerp(backbuffer, float4 (Hue(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 13:{color = lerp(backbuffer, float4 (Saturation(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 14:{color = lerp(backbuffer, float4 (ColorM(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 15:{color = lerp(backbuffer, float4 (Luminosity(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 16:{color = lerp(backbuffer, float4 (Lineardodge(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 17:{color = lerp(backbuffer, float4 (Linearburn(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 18:{color = lerp(backbuffer, float4 (Vividlight(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 19:{color = lerp(backbuffer, float4 (Linearlight(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 20:{color = lerp(backbuffer, float4 (Pinlight(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 21:{color = lerp(backbuffer, float4 (Hardmix(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 22:{color = lerp(backbuffer, float4 (Reflect(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+			case 23:{color = lerp(backbuffer, float4 (Glow(backbuffer.rgb, precolor.rgb),backbuffer.a), total_alpha);break;}
+		}
+
+
 		color.a = backbuffer.a;
+
 	}
 
 	technique StageDepthPlus
