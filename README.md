@@ -2,13 +2,13 @@
  
 Just shaders that I edit or make.
  
-I am new at writing shaders so please take that in mind while reading the code. Any code used from other shaders will be stated in the shader comments. If i forgot to mention someone please let me know.
+I am new at writing shaders so please take that in mind while reading the code. Any code used from other shaders will be stated in the shader comments. If I forgot to mention someone please let me know.
  
 The side black bars you see in some images are because of the aspect ratio of the window of the game when I took the picture.
  
 # <p align="center"><span style="color:#bb0044">CanvasFog</span></p>
  
-If you are familiar with the Adaptive Fog shader then you know how the fog from that shader looks like, if not it's basically a color you choose to blend with the depth. Taking that as an initial point I added the option to use gradients in the fog instead of a single color.
+If you are familiar with the Adaptive Fog shader then you know what the fog from that shader looks like, if not it's basically a color you choose to blend with the depth. Taking that as an initial point I added the option to use gradients in the fog instead of a single color.
  
 ## Features
  
@@ -18,8 +18,13 @@ If you are familiar with the Adaptive Fog shader then you know how the fog from 
     - Strip
     - Diamond
 - **Colors with alpha channel**: Besides having the option to choose 2 colors in the gradient, you can also change the alpha channel values to play around
-- **Color samplers**: You can pick the colors of the gradients from the screen
-- **Fog Types**: The name isn't the best, but it means that you can choose to use the adaptive fog-type or the emphasize fog-type which isn't a fog technically speaking, but it affects the "surface" of objects in the fog range. Will let some pictures below.
+- **HSV gradients**: You can now choose to use HSV gradients to get a smooth color transition.
+- **Color pickers**: Get the color from a pixel in the screen and use it as one of the colors in the gradient.
+- **Fog rotation (only for adaptive fog)**: This lets you rotate the "wall" of fog in the game world for more interesting interactions.
+- **Fog Types**: The name isn't the best, but the fog type is the algorithm used to display the gradients. Right now the types available are:
+    - Adaptive Fog: Controls like the `AdaptiveFog` shader.
+    - Emphasize: Controls like the `Emphasize` shader, which isn't a fog technically speaking, but it affects the "surface" of objects in the fog range. 
+    - Depth Slicer: Controls like Prod80's shaders depth control. In my experience is the easiest to use.
 - **Blending modes**: I added different ways for the fog to blend with the screen. The available blending modes are the following:
     - Normal
     - Multiply
@@ -81,9 +86,9 @@ Last blending modes functions kindly provided by prod80.
  
 # <p align="center"><span style="color:#bb0044">CanvasMask</span></p>
  
-While doing the CanvasFog shader I thought that it would be cool to have these gradient stuff alongside the depth buffer to use as a mask, so here it is.
+While doing the CanvasFog shader I thought that it would be cool to have this gradient stuff alongside the depth buffer to use as a mask, so here it is.
  
-It's basically has the same features from the CanvasFog shader (that are relevant for a masking shaders), not very much to add.
+It basically has the same features from the CanvasFog shader (that are relevant for a masking shader), but not very much to add.
  
 ## Some example images
  
@@ -100,17 +105,19 @@ It's basically has the same features from the CanvasFog shader (that are relevan
  
 So again in one of those "I want to control x from shader y" moments I made some changes to the StageDepth shader. Here is the stuff it can do.
  
-- **Scale**: Possibility to adjust the scale of the image in both axis individually
+- **Scale**: Possibility to adjust the scale of the image in both axes individually
 - **Rotation**: This one speaks for itself, you can rotate the image
 - **Flip**: You can flip the image horizontally and vertically
 - **Blending Modes**: I wrote them for the CanvasFog shader and figured out they can be usefully applied to an image
-- **Depth Control**: It already was in the original StageDepth. It uses the depth buffer to decide to show the image or not
+- **Depth Control**: It already was in the original StageDepth. It uses the depth buffer to decide whether to show the image or not
 - **Masking**: It allows you to use an image as a mask alongside the image itself.
 - **Depth map usage**: Kind of an experimental feature. You can provide a depthmap image alongside the stageplus image. This one will determine if the image is shown or not.
 - **AR Correction**: You can now enter the definition of the image being used as preprocessor definitions so it can be automatically loaded with those values.
+- **Smooth depth control**: It lets you smooth out the "depth" of the image, allowing you to fit images like fog or smoke better.
+- **Repeat image**: Repeat the loaded image across the entire screen.
 
 - **StageDepthPlus_WithDepthBufferMod.fx**
-In the `StageDepthPlus with depth buffer modification` folder you will find what the name suggests. This version of StageDepthPlus allows you to blend a depth map image with the actual games depth buffer, so you can load an image of a subject and include it in the depth buffer, so the subject can interact with other shaders that use the depth buffer. If you wanna use this shader be sure to replace the ReShade.fxh file from your shaders folder with the one in the repos folder and edit the global preprocessor definition RESHADE_MIX_STAGE_DEPTH_PLUS_MAP to 1.
+In the `StageDepthPlus with depth buffer modification` folder, you will find what the name suggests. This version of StageDepthPlus allows you to blend a depth map image with the actual games depth buffer, so you can load an image of a subject and include it in the depth buffer, so the subject can interact with other shaders that use the depth buffer. If you wanna use this shader be sure to replace the ReShade.fxh file from your shaders folder with the one in the repos folder and edit the global preprocessor definition RESHADE_MIX_STAGE_DEPTH_PLUS_MAP to 1.
  
     This is a very experimental "feature", and because of reshade limitations you will need to set up the image controls (scale, position, rotation, etc.) in each shader that interacts with the depth buffer (extra controls will appear in each shader, alongside the same preprocessor definitions from StageDepthPlus, but you can ignore those) to match the same as the one used in `StageDepthPlus_WithDepthBufferMod.fx`. I apologize if it's not easy to use, if people find it useful I will try to improve it later.
  
@@ -130,9 +137,9 @@ In the `StageDepthPlus with depth buffer modification` folder you will find what
  
 # <p align="center"><span style="color:#bb0044">FreezeShot</span></p>
  
-I noticed a lot of double exposure shots recently, and I thought shooting and putting the image in a layer shader must be a bummer, so I made a thing for that.
+I noticed a lot of double-exposure shots recently, and I thought shooting and putting the image in a layer shader must be a bummer, so I made a thing for that.
  
-Introducing FreezeShot, align the camera, adjust the depth of the subject you want to take the screenshot from and press the Freeze bool and uala! You can move and adjust it like any layer shader.
+Introducing FreezeShot, align the camera, adjust the depth of the subject you want to take the screenshot from, and press the Freeze bool and uala! You can move and adjust it like any layer shader.
  
 It has the same controls as the StageDepthPlus. It also saves the depth buffer when you freeze the image, so you can make the layer interact with the scene.
  
@@ -145,26 +152,26 @@ It has the same controls as the StageDepthPlus. It also saves the depth buffer w
  
 # <p align="center"><span style="color:#bb0044">Flip</span></p>
  
-I can't take credit for this one since it's a really easy shader Marty wrote in the reshade forums, I just added a couple of bools parameters to choose if you want to flip the image horizontally or vertically. I put it here since it can be useful for artistics purposes like the image below.
+I can't take credit for this one since it's a really easy shader Marty wrote in the reshade forums, I just added a couple of bools parameters to choose if you want to flip the image horizontally or vertically. I put it here since it can be useful for artistic purposes like the image below.
  
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/74970280-d6dea180-53fc-11ea-8ed6-7b9c6ff15004.png">
 <i>Flip shader with a couple of instance of CanvasMask</i></p>
  
 # <p align="center"><span style="color:#bb0044">Color Mask</span></p>
  
-As the title suggests its a shader for masking purposes using colors as the target. My intention was to imitate the "Color Range" selection function from Photoshop, so if you are familiar with that you shouldn't have much trouble using it. The shader is based on the Color Isolation shader from Daodan, so all credits goes to him.
+As the title suggests it's a shader for masking purposes using colors as the target. I intended to imitate the "Color Range" selection function from Photoshop, so if you are familiar with that you shouldn't have much trouble using it. The shader is based on the Color Isolation shader from Daodan, so all credits go to him.
  
 ## Features
  
-- **Target Hue**: You can select the color you want with a variable or with a eyedropper.
-- **Hue Overlap**: The bigger the number the lesser the amount of colors being masked. Think of it as controlling how close does the colors need to be in order to be accepted.
+- **Target Hue**: You can select the color you want with a variable or with an eyedropper.
+- **Hue Overlap**: The bigger the number the lesser the number of colors being masked. Think of it as controlling how close the colors need to be in order to be accepted.
 - **Curve Steepness**: The brightness of the colors not being masked.
-- **Accept / Reject Colors**: Once you have the objective color setted up you can either mask all colors except the one selected or vice versa.
+- **Accept / Reject Colors**: Once you have the objective color set up you can either mask all colors except the one selected or vice versa.
 - **Mask Strength**: Just a way to control the opacity of the shader.
 - **Debug tools**: If you want to see exactly what you are masking the shader offers two debug tools:
     - **Hue Difference**: Shows a grey-scale image allowing you to see the part of the screen that is being accepted.
     - **Debug Overlay**: Show a color table with a black line that points out the colors being masked.
-Both of these debug options were made by Daodan and are quite useful, would suggest you to use them.
+Both of these debug options were made by Daodan and are quite useful, would suggest you use them.
 - **Highlights and Shadows selection**: As the "Color Range" function in Photoshop you can use this to mask shadows independently of the hue, and if you use the "Reject Colors" option you can mask highlights.
  
 ## Some example images
@@ -184,16 +191,16 @@ Both of these debug options were made by Daodan and are quite useful, would sugg
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/80437832-146a1a00-88d9-11ea-978b-8c17c18d3658.png">
 <i>Masking highlights using the HueFX shader</i></p>
  
-I think the result is pretty close to what photoshop does, if you are masking shadows or highlights don't be afraid of using values outsides of the boundaries (Control + click) in the "Fuzziness" and "Curve Steepness" variables, still have figure that out, but it's quite usable.
+I think the result is pretty close to what photoshop does, if you are masking shadows or highlights don't be afraid of using values outsides of the boundaries (Control + click) in the "Fuzziness" and "Curve Steepness" variables, still haven't figured that out, but it's quite usable.
  
 # Things to do
 - Change how the fog values work
-- Use a bicubic or another filter for scaling the image in StageDepthPlus since it's essentially using a nearest neighbor method.
-- Make the Color Mask shader work with color selection, saturation range and light range.
+- Use a bicubic or another filter for scaling the image in StageDepthPlus since it's essentially using the nearest neighbor method.
+- Make the Color Mask shader work with color selection, saturation range, and light range.
 - Make the shaders interface more user friendly
-- Fix the strip gradient don't maintaining the scale while changing the angle
+- Fix the strip gradient not maintaining the scale while changing the angle
 - Fix the diamond gradient to rotate with the modifications done in the x and y axes
-- Change the gradient to other color space
+- Change the gradient to another color space
  
 Any bug or suggestion you got don't hesitate in hitting me up.
  
@@ -201,7 +208,3 @@ Any bug or suggestion you got don't hesitate in hitting me up.
 A thank you is more than enough, but if you would also like to help me out you can do it through [PayPal](https://www.paypal.com/paypalme/originalnicodr). Thank you very much to the very gentle folks that supported me, you guys are the best:
  
 - **Dread**
- 
- 
-
-

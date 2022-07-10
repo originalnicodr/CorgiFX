@@ -75,11 +75,13 @@ uniform bool drawColorBSelectON <
     ui_tooltip = "Only visible if the picker is used";
 > = false;
 
+uniform bool UseHSVGradient <
+	ui_label = "Use HSV Gradients";
+> = false;
+
 uniform bool Flip <
 	ui_label = "Flip Colors";
 > = false;
-
-
 
 
 uniform int GradientType <
@@ -487,7 +489,7 @@ float3 ClipColor(float3 c){
 	return float3(cr,cg,cb);
 }
 
-float3 SetLum (float3 c, float l){
+float3 SetLum(float3 c, float l){
 	float d= l-Lum(c);
 	return float3(c.r+d,c.g+d,c.b+d);
 }
@@ -591,6 +593,32 @@ float3 Luminosity(float3 b, float3 s){
 	return SetLum(b,Lum(s));
 }
 
+float3 rgb2hsv(float3 c) {
+    const float4 K = float4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+
+	float4 p;
+	if (c.g < c.b)
+		p = float4(c.bg, K.wz);
+	else
+		p = float4(c.gb, K.xy);
+
+	float4 q;
+	if (c.r < p.x)
+		q = float4(p.xyw, c.r);
+	else
+		q = float4(c.r, p.yzx);
+
+    const float d = q.x - min(q.w, q.y);
+    const float e = 1.0e-10;
+    return float3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+float3 hsv2rgb(float3 c) {
+    const float4 K = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    const float3 p = abs(frac(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * lerp(K.xxx, saturate(p - K.xxx), c.y);
+}
+
 
 //Blend functions priveded by prod80
 
@@ -630,7 +658,7 @@ float2 rotate(float2 v,float2 o, float a){
 }
 
 
-//Emphasize algorithm from Otis
+//Otis algorithm
 float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
 {
 	const float scenedepth = ReShade::GetLinearizedDepth(texcoord);
@@ -659,11 +687,49 @@ float CalculateDepthDiffCoC(float2 texcoord : TEXCOORD)
 		return saturate(smoothstep(0, desaturateFullRange, (depthdiff*(1-FogCurveE))));
 }
 
+float hue_lerp(float h1, float h2, float v){
+	float lowerHue = min(h1,h2);
+	float higherHue = max(h1,h2);
+
+	float maxCCW = higherHue - lowerHue;
+	float maxCW = (lowerHue+1) - higherHue;
+
+	//Clockwise
+	if (maxCW > maxCCW){
+		return lerp(lowerHue, higherHue, v);
+	}
+	else{
+		return lerp(lowerHue+1,higherHue,v)%1;
+	}
+}
+
+float3 hsv_lerp(float3 c1, float3 c2, float p){
+	float h = hue_lerp(c1.x, c2.x, p);
+	float s = lerp(c1.y, c2.y, p);
+	float v = lerp(c1.z, c2.z, p);
+	
+	return float3(h,s,v);
+}
+
 //Function used to blend the gradients and the screen
 float3 Blender(float3 CA, float3 CB, float2 texcoord, float gradient, float fogFactor){
+
+	float3 gradientColour;
+
+	if (UseHSVGradient) {
+		CA = rgb2hsv(CA);
+		CB = rgb2hsv(CB);
+		gradientColour = hsv_lerp(CA.xyz, CB.xyz, Flip ? 1 - gradient : gradient);
+		gradientColour = hsv2rgb(gradientColour);
+	}
+	else {
+		gradientColour = lerp(CA.xyz, CB.xyz, Flip ? 1 - gradient : gradient);
+	}
+
 	float3 fragment = tex2D(ReShade::BackBuffer, texcoord).rgb;
 	//float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord).rgb, lerp(tex2D(Otis_BloomSampler, texcoord).rgb, lerp(CA.rgb, CB.rgb, Flip ? 1 - gradient : gradient), fogFactor), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));
-	float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord).rgb, lerp(CA.rgb, CB.rgb, Flip ? 1 - gradient : gradient), fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));
+	float3 prefragment=lerp(tex2D(ReShade::BackBuffer, texcoord).rgb, gradientColour, fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));
+
 	switch (BlendM){
 		case 0:{fragment=prefragment;break;}
 		case 1:{fragment=lerp(fragment.rgb,Multiply(fragment.rgb,prefragment),fogFactor*lerp(ColorA.a, ColorB.a, Flip ? 1 - gradient : gradient));break;}
@@ -721,6 +787,7 @@ float3 mod7(float3 x) {
 float3 permute(float3 x) {
   return mod289((34.0 * x + 1.0) * x);
 }
+
 
 // Cellular noise, returning F1 and F2 in a float2.
 // Standard 3x3 search window for good F1 and F2 values
