@@ -220,20 +220,17 @@ namespace StageDepthPlus
 
 
 
-	sampler Depth_Map_Sampler_Repeat
-	{
+	sampler Depth_Map_Sampler_Repeat{
 	    Texture  = Depth_Map_tex;
 		AddressU = REPEAT;
 		AddressV = REPEAT;
 
 	};
-
 	sampler Stageplus_sampler_Repeat {
 		Texture = Stageplus_texture;
 		AddressU = REPEAT;
 		AddressV = REPEAT;
 	};
-
 	sampler Mask_sampler_Repeat {
 		Texture = Mask_tex;
 		AddressU = REPEAT;
@@ -241,12 +238,21 @@ namespace StageDepthPlus
 	};
 
 
-	sampler Depth_Map_Sampler	{Texture  = Depth_Map_tex; };
-	sampler Stageplus_sampler {Texture = Stageplus_texture; };
-	sampler Mask_sampler {Texture = Mask_tex; };
-
-
-
+	sampler Depth_Map_Sampler {
+		Texture  = Depth_Map_tex;
+		AddressU  = BORDER;
+		AddressV  = BORDER;
+	};
+	sampler Stageplus_sampler {
+		Texture = Stageplus_texture;
+		AddressU  = BORDER;
+		AddressV  = BORDER;
+	};
+	sampler Mask_sampler {
+		Texture = Mask_tex;
+		AddressU  = BORDER;
+		AddressV  = BORDER;
+	};
 
 	/*
 	#if ((3*BUFFER_WIDTH <= 8192) && (3*BUFFER_WIDTH <= 8192))
