@@ -1,4 +1,4 @@
-# <span style="color:#bb4400">CorgiFX</span>
+# CorgiFX
  
 Just shaders that I edit or make.
  
@@ -6,7 +6,7 @@ I am new at writing shaders so please take that in mind while reading the code. 
  
 The side black bars you see in some images are because of the aspect ratio of the window of the game when I took the picture.
  
-# <p align="center"><span style="color:#bb0044">CanvasFog</span></p>
+# CanvasFog
  
 If you are familiar with the Adaptive Fog shader then you know what the fog from that shader looks like, if not it's basically a color you choose to blend with the depth. Taking that as an initial point I added the option to use gradients in the fog instead of a single color.
  
@@ -53,7 +53,6 @@ If you are familiar with the Adaptive Fog shader then you know what the fog from
  
 Last blending modes functions kindly provided by prod80.
  
-## Some example images
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476225-9eedbc80-4370-11ea-8a58-57447dadf76e.png">
 <i>Simple adaptive-type fog with linear gradient and normal blending</i></p>
  
@@ -78,19 +77,15 @@ Last blending modes functions kindly provided by prod80.
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476265-a9a85180-4370-11ea-924d-98513728f30c.png">
 <i>Emphasize-type fog with lineal gradient and color blending mode</i></p>
  
- 
- 
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/74173946-d0d50d80-4c11-11ea-8d39-b7df1f82a613.png">
 <i>Adaptive-type fog with diamond gradient and CanvasMask</i></p>
  
  
-# <p align="center"><span style="color:#bb0044">CanvasMask</span></p>
+# CanvasMask
  
 While doing the CanvasFog shader I thought that it would be cool to have this gradient stuff alongside the depth buffer to use as a mask, so here it is.
  
 It basically has the same features from the CanvasFog shader (that are relevant for a masking shader), but not very much to add.
- 
-## Some example images
  
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476266-a9a85180-4370-11ea-8d86-d723fe54d3b3.png">
 <i>Using emphasize-type mask with a LUT shader</i></p>
@@ -101,7 +96,7 @@ It basically has the same features from the CanvasFog shader (that are relevant 
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476269-aa40e800-4370-11ea-82b0-11361c59dc63.png">
 <i>Using adaptivefog-type mask with the DisplayDepth shader</i></p>
  
-# <p align="center"><span style="color:#bb0044">StageDepthPlus</span></p>
+# StageDepthPlus
  
 So again in one of those "I want to control x from shader y" moments I made some changes to the StageDepth shader. Here is the stuff it can do.
  
@@ -124,8 +119,6 @@ In the `StageDepthPlus with depth buffer modification` folder, you will find wha
     I edited the ReShade.fxh that was around with reshade 4.9.1. Don't expect it to work on newer or older versions of reshade.
 
  
-## Some example images
- 
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476247-a745f780-4370-11ea-930c-fe813ae3200b.png">
 <i>I like corgis</i></p>
  
@@ -135,7 +128,7 @@ In the `StageDepthPlus with depth buffer modification` folder, you will find wha
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/74969102-b57cb600-53fa-11ea-81ad-6df4c1623e59.png">
 <i>Same image using cineDOF while mixing the depth map with the depth buffer</i></p>
  
-# <p align="center"><span style="color:#bb0044">FreezeShot</span></p>
+# FreezeShot
  
 I noticed a lot of double-exposure shots recently, and I thought shooting and putting the image in a layer shader must be a bummer, so I made a thing for that.
  
@@ -150,49 +143,48 @@ It has the same controls as the StageDepthPlus. It also saves the depth buffer w
 <i>Frozen image using the saved depth to interact with the scene</i></p>
  
  
-# <p align="center"><span style="color:#bb0044">Flip</span></p>
+# Flip
  
 I can't take credit for this one since it's a really easy shader Marty wrote in the reshade forums, I just added a couple of bools parameters to choose if you want to flip the image horizontally or vertically. I put it here since it can be useful for artistic purposes like the image below.
  
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/74970280-d6dea180-53fc-11ea-8ed6-7b9c6ff15004.png">
 <i>Flip shader with a couple of instance of CanvasMask</i></p>
  
-# <p align="center"><span style="color:#bb0044">Color Mask</span></p>
+# Color Mask
  
-As the title suggests it's a shader for masking purposes using colors as the target. I intended to imitate the "Color Range" selection function from Photoshop, so if you are familiar with that you shouldn't have much trouble using it. The shader is based on the Color Isolation shader from Daodan, so all credits go to him.
- 
+As the title suggests it's a shader for masking purposes using colors as the target. I intended to imitate the masking from Substance Designer.
+
 ## Features
  
-- **Target Hue**: You can select the color you want with a variable or with an eyedropper.
-- **Hue Overlap**: The bigger the number the lesser the number of colors being masked. Think of it as controlling how close the colors need to be in order to be accepted.
-- **Curve Steepness**: The brightness of the colors not being masked.
-- **Accept / Reject Colors**: Once you have the objective color set up you can either mask all colors except the one selected or vice versa.
-- **Mask Strength**: Just a way to control the opacity of the shader.
-- **Debug tools**: If you want to see exactly what you are masking the shader offers two debug tools:
-    - **Hue Difference**: Shows a grey-scale image allowing you to see the part of the screen that is being accepted.
-    - **Debug Overlay**: Show a color table with a black line that points out the colors being masked.
-Both of these debug options were made by Daodan and are quite useful, would suggest you use them.
-- **Highlights and Shadows selection**: As the "Color Range" function in Photoshop you can use this to mask shadows independently of the hue, and if you use the "Reject Colors" option you can mask highlights.
+- **Target Hue**: You can select the hue and/or luma you want to target with an eyedropper.
+- **Masks**:
+    - **Hue Mask**: Lets you select the chroma target that will interact with the selection, alongside its range, smothness of the step and opacity.
+    - **Luma Mask**: Lets you select the luma target that will interact with the selection, alongside its range, smothness of the step and opacity.
+- **Blending Mode**: A blending mode to decide how both masks should interact between eachoter. If their masks should be "added" or "multiplied". Great if you want to select, for example, red shadows (multiply) or reds and shadows (add).
  
-## Some example images
- 
-<p align="center"><img src="https://user-images.githubusercontent.com/24371572/80437802-03210d80-88d9-11ea-943f-5dc5ce9b50b2.png">
-<i>Original scene</i></p>
- 
-<p align="center"><img src="https://user-images.githubusercontent.com/24371572/80437789-fb616900-88d8-11ea-9e03-3f81c2f974c0.png">
-<i>HueFx shader applied while masking all colors except blue</i></p>
- 
-<p align="center"><img src="https://user-images.githubusercontent.com/24371572/80437811-0a481b80-88d9-11ea-9abd-fe60bb7a586d.png">
-<i>Using the eyedropper to sample a color from the screen, again with the HueFX shader</i></p>
- 
-<p align="center"><img src="https://user-images.githubusercontent.com/24371572/80437825-116f2980-88d9-11ea-98ea-8c3859d4a550.png">
-<i>Using the "hue difference" debugging option while using the "Lineal" windows option to accept shadows in the mask</i></p>
- 
-<p align="center"><img src="https://user-images.githubusercontent.com/24371572/80437832-146a1a00-88d9-11ea-978b-8c17c18d3658.png">
-<i>Masking highlights using the HueFX shader</i></p>
- 
-I think the result is pretty close to what photoshop does, if you are masking shadows or highlights don't be afraid of using values outsides of the boundaries (Control + click) in the "Fuzziness" and "Curve Steepness" variables, still haven't figured that out, but it's quite usable.
- 
+<p align="center"><img src="https://cdn.discordapp.com/attachments/804451693853016085/1015703965352067183/UnityEmpty3d_2022-09-03_15-58-38_overlay.png">
+
+<p align="center"><img src="https://cdn.discordapp.com/attachments/804451693853016085/1015703965704405223/UnityEmpty3d_2022-09-03_15-55-30_overlay.png">
+
+# AspectRatioMultiGrid
+
+I use AspectRatioComposition a lot, but there were some stuff I wish it did, therefore I made my own spin on the matter.
+
+## Features:
+
+- Turn off AR bars if you just want to use the grids.
+- Choose different ARs from a list you can write yourself in the reshade UI (read the tooltip to see how to do it).
+- Choose a specific AR with sliders like AspectRatioComposition.
+- Render a big amount of different types of grids at the same time.
+- Option to make the grid color be the opposite of the pixels behind the grid to contrast it against the game's screen.
+- Adjust the grid lines' width to better see them when using DSR.
+- The ability to move lines around to make your own custom grid, or use a custom grid image if you prefer.
+
+And more!
+
+<p align="center"><img src="https://cdn.discordapp.com/attachments/804451693853016085/1015704440264728737/UnityEmpty3d_2022-09-03_11-50-44_overlay.png">
+
+
 # Things to do
 - Change how the fog values work
 - Use a bicubic or another filter for scaling the image in StageDepthPlus since it's essentially using the nearest neighbor method.
