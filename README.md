@@ -1,57 +1,24 @@
 # CorgiFX
- 
-Just shaders that I edit or make.
- 
-I am new at writing shaders so please take that in mind while reading the code. Any code used from other shaders will be stated in the shader comments. If I forgot to mention someone please let me know.
- 
-The side black bars you see in some images are because of the aspect ratio of the window of the game when I took the picture.
+
+CorgiFX is a collection of shaders primarily designed for Virtual Photography, utilizing the ReShade FX language.
+
+For instructions on using multiple instances of a shader simultaneously, please refer to [this section](https://framedsc.com/ReshadeGuides/setupreshade.htm#shader-duplication) in the Framed ReShade guide.
  
 # CanvasFog
- 
-If you are familiar with the Adaptive Fog shader then you know what the fog from that shader looks like, if not it's basically a color you choose to blend with the depth. Taking that as an initial point I added the option to use gradients in the fog instead of a single color.
+
+CanvasFog enables you to apply various types of gradients to the game scene, interacting with the depth buffer. This allows you to manually add gradients to the sky, create contrast between subjects and the background, produce silhouettes, and more.
+
+I have reused code from similar shaders (with proper credits given) like AdaptiveFog, Emphasize, and DepthSlicer. If you are familiar with these shaders, you should have no trouble adjusting to the parameters of CanvasFog.
  
 ## Features
  
-- **Gradients**: The available gradients (with their own settings) are:
-    - Linear
-    - Radial
-    - Strip
-    - Diamond
-- **Colors with alpha channel**: Besides having the option to choose 2 colors in the gradient, you can also change the alpha channel values to play around
-- **HSV gradients**: You can now choose to use HSV gradients to get a smooth color transition.
-- **Color pickers**: Get the color from a pixel in the screen and use it as one of the colors in the gradient.
-- **Fog rotation (only for adaptive fog)**: This lets you rotate the "wall" of fog in the game world for more interesting interactions.
-- **Fog Types**: The name isn't the best, but the fog type is the algorithm used to display the gradients. Right now the types available are:
-    - Adaptive Fog: Controls like the `AdaptiveFog` shader.
-    - Emphasize: Controls like the `Emphasize` shader, which isn't a fog technically speaking, but it affects the "surface" of objects in the fog range. 
-    - Depth Slicer: Controls like Prod80's shaders depth control. In my experience is the easiest to use.
-- **Blending modes**: I added different ways for the fog to blend with the screen. The available blending modes are the following:
-    - Normal
-    - Multiply
-    - Screen
-    - Overlay
-    - Darken
-    - Lighten
-    - Color Dodge
-    - Color Burn
-    - Hard Light
-    - Soft Light
-    - Difference
-    - Exclusion
-    - Hue
-    - Saturation
-    - Color
-    - Luminosity
-    - Linear burn
-    - Linear dodge
-    - Vivid light
-    - Linearlight
-    - Pin light
-    - Hardmix
-    - Reflect
-    - Glow
- 
-Last blending modes functions kindly provided by prod80.
+- **Gradients**: Choose from a variety of gradients (Linear, Radial, Strip, Diamond), each with its own customizable settings.
+- **Colors with alpha channel**: In addition to selecting two colors for the gradient, you can also adjust the alpha channel to create color spots.
+- **HSV gradients**: Utilize HSV gradients for smoother color transitions.
+- **Color pickers**: Capture colors from pixels on the screen and incorporate them into the gradient.
+- **Fog Types**: The fog type refers to the algorithm used to display the gradients. Currently, there are three types available: Adaptive Fog, Emphasize, and Depth Slicer. The first two function similarly to Frans' shaders of the same name, while the latter utilizes Prod80's shaders for depth control. In my experience, Depth Slicer is the easiest one to use.
+- **Fog rotation (WIP)**: This feature allows you to rotate the fog "wall" within the game world, creating more interestic interactions with the games' depth buffer. Currently, it is only available in AdaptiveFog.
+- **Blending modes**: Apply various blending modes (Multiply, Screen, Overlay, etc.) to blend the colors of the gradient with the scene.
  
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476225-9eedbc80-4370-11ea-8a58-57447dadf76e.png">
 <i>Simple adaptive-type fog with linear gradient and normal blending</i></p>
@@ -60,7 +27,7 @@ Last blending modes functions kindly provided by prod80.
 <i>Adaptive-type fog with linear gradient using color mode</i></p>
  
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476250-a7de8e00-4370-11ea-8d36-cb49df021fba.png">
-<i>Adaptive-type fog with linear gradient using a color with transparency</i></p>
+<i>Adaptive-type fog with linear gradient using a color with zero alpha</i></p>
  
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476254-a7de8e00-4370-11ea-9af2-2b1df0a66b2c.png">
 <i>Radial gradient with high gradient sharpness</i></p>
@@ -82,10 +49,10 @@ Last blending modes functions kindly provided by prod80.
  
  
 # CanvasMask
- 
-While doing the CanvasFog shader I thought that it would be cool to have this gradient stuff alongside the depth buffer to use as a mask, so here it is.
- 
-It basically has the same features from the CanvasFog shader (that are relevant for a masking shader), but not very much to add.
+
+Similar to CanvasFog, CanvasMask allows you to mask other shaders. It combines the "fog" controls and gradients to determine which shaders should be displayed. To use CanvasMask, place the shaders you want to mask between the `BeforeCanvasFog` and `AfterCanvasFog` techniques.
+
+You can enable the debug option to visualize the mask being edited, making it easier to fine-tune the settings.
  
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476266-a9a85180-4370-11ea-8d86-d723fe54d3b3.png">
 <i>Using emphasize-type mask with a LUT shader</i></p>
@@ -97,28 +64,30 @@ It basically has the same features from the CanvasFog shader (that are relevant 
 <i>Using adaptivefog-type mask with the DisplayDepth shader</i></p>
  
 # StageDepthPlus
+
+Using the StageDepth shader as a foundation, I have added several features that seemed natural for drawing an image on the screen.
  
-So again in one of those "I want to control x from shader y" moments I made some changes to the StageDepth shader. Here is the stuff it can do.
- 
-- **Scale**: Possibility to adjust the scale of the image in both axes individually
-- **Rotation**: This one speaks for itself, you can rotate the image
-- **Flip**: You can flip the image horizontally and vertically
-- **Blending Modes**: I wrote them for the CanvasFog shader and figured out they can be usefully applied to an image
-- **Depth Control**: It already was in the original StageDepth. It uses the depth buffer to decide whether to show the image or not
-- **Masking**: It allows you to use an image as a mask alongside the image itself.
-- **Depth map usage**: Kind of an experimental feature. You can provide a depthmap image alongside the stageplus image. This one will determine if the image is shown or not.
-- **AR Correction**: You can now enter the definition of the image being used as preprocessor definitions so it can be automatically loaded with those values.
-- **Smooth depth control**: It lets you smooth out the "depth" of the image, allowing you to fit images like fog or smoke better.
+ ## Features
+
+- **Scale**: Adjust the scale of the image individually in both axes.
+- **Rotation**: Rotate the image as needed.
+- **Flip**: Horizontally and vertically flip the image.
+- **Blending Modes**: Apply blending modes to the image, offering more versatile usage.
+- **Depth Control**: This feature was already present in the original StageDepth shader. It utilizes the depth buffer to determine whether to display the image.
+- **Depth map usage**: An experimental feature that allows you to provide a depth map image alongside the stageplus image. The depth map determines whether the image is shown or not.
+- **Masking**: Use an image as a mask in conjunction with the image itself.
+- **AR Correction**: Enter the resolution of the image being used as preprocessor definitions, enabling automatic loading with those values.
+- **Smooth depth control**: Smooth out the "depth" of the image, making it easier to integrate images like fog or smoke.
 - **Repeat image**: Repeat the loaded image across the entire screen.
 
-- **StageDepthPlus_WithDepthBufferMod.fx**
-In the `StageDepthPlus with depth buffer modification` folder, you will find what the name suggests. This version of StageDepthPlus allows you to blend a depth map image with the actual games depth buffer, so you can load an image of a subject and include it in the depth buffer, so the subject can interact with other shaders that use the depth buffer. If you wanna use this shader be sure to replace the ReShade.fxh file from your shaders folder with the one in the repos folder and edit the global preprocessor definition RESHADE_MIX_STAGE_DEPTH_PLUS_MAP to 1.
- 
-    This is a very experimental "feature", and because of reshade limitations you will need to set up the image controls (scale, position, rotation, etc.) in each shader that interacts with the depth buffer (extra controls will appear in each shader, alongside the same preprocessor definitions from StageDepthPlus, but you can ignore those) to match the same as the one used in `StageDepthPlus_WithDepthBufferMod.fx`. I apologize if it's not easy to use, if people find it useful I will try to improve it later.
- 
-    I edited the ReShade.fxh that was around with reshade 4.9.1. Don't expect it to work on newer or older versions of reshade.
+## StageDepthPlus_WithDepthBufferMod.fx
 
+Inside the `StageDepthPlus with depth buffer modification` folder, you will find a version of StageDepthPlus that allows blending a depth map image with the game's actual depth buffer. This enables you to load an image of a subject and incorporate it into the depth buffer, enabling interaction with other shaders that utilize the depth buffer. To use this shader, replace the ReShade.fxh file in your shaders folder with the one provided in the repository's folder. Also, edit the global preprocessor definition `RESHADE_MIX_STAGE_DEPTH_PLUS_MAP` to 1.
  
+Please note that this feature is highly experimental, and due to limitations within ReShade, you will need to set up the image controls (scale, position, rotation, etc.) individually in each shader that interacts with the depth buffer. Additional controls will appear in each shader alongside the preprocessor definitions from StageDepthPlus, but you can ignore those. I apologize for any inconvenience in its usage. In the future, it may be more appropriate to develop this as a separate add-on, as it would make more sense that way.
+
+I have edited the `ReShade.fxh` file based on reshade version 4.9.1. Please keep in mind that it may not work with newer or older versions of ReShade.
+
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/73476247-a745f780-4370-11ea-930c-fe813ae3200b.png">
 <i>I like corgis</i></p>
  
@@ -126,15 +95,13 @@ In the `StageDepthPlus with depth buffer modification` folder, you will find wha
 <i>Image using a depth map</i></p>
  
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/74969102-b57cb600-53fa-11ea-81ad-6df4c1623e59.png">
-<i>Same image using cineDOF while mixing the depth map with the depth buffer</i></p>
+<i>Same image using CineDOF while mixing the image depth map with the depth buffer</i></p>
  
 # FreezeShot
- 
-I noticed a lot of double-exposure shots recently, and I thought shooting and putting the image in a layer shader must be a bummer, so I made a thing for that.
- 
-Introducing FreezeShot, align the camera, adjust the depth of the subject you want to take the screenshot from, and press the Freeze bool and uala! You can move and adjust it like any layer shader.
- 
-It has the same controls as the StageDepthPlus. It also saves the depth buffer when you freeze the image, so you can make the layer interact with the scene.
+
+With this shader, you can capture real-time images of the game and manipulate them as if they were textures being used by StageDepthPlus, providing similar controls. Furthermore, when you freeze the image, the shader saves the depth buffer, allowing the image layer to interact with the scene.
+
+Please note that the image is stored in memory, so it will be lost upon reloading ReShade (which occurs, for instance, during hotsampling). Some users have utilized this shader without freezing the image itself, for creating reflections for example, or to rotate a portrait shot in a game that doesnt support vertical aspect ratios resolutions, so maybe you find more uses for it.
  
 <p align="center"><img src="https://user-images.githubusercontent.com/24371572/74969164-caf1e000-53fa-11ea-8291-c80527ea385b.jpg">
 <i>Freezing and flipping the image</i></p>
@@ -152,15 +119,15 @@ I can't take credit for this one since it's a really easy shader Marty wrote in 
  
 # Color Mask
  
-As the title suggests it's a shader for masking purposes using colors as the target. I intended to imitate the masking from Substance Designer.
+As the title suggests, this shader is specifically designed for masking purposes, using colors as the target. The objective was to replicate the masking functionality found in Substance Designer. Thanks to Dread for the valuable feedback during the development process.
 
 ## Features
  
-- **Target Hue**: You can select the hue and/or luma you want to target with an eyedropper.
+- **Target Hue**: You can use an eyedropper to select the specific hue and/or luma values you want to target.
 - **Masks**:
-    - **Hue Mask**: Lets you select the chroma target that will interact with the selection, alongside its range, smothness of the step and opacity.
-    - **Luma Mask**: Lets you select the luma target that will interact with the selection, alongside its range, smothness of the step and opacity.
-- **Blending Mode**: A blending mode to decide how both masks should interact between eachoter. If their masks should be "added" or "multiplied". Great if you want to select, for example, red shadows (multiply) or reds and shadows (add).
+    - **Hue Mask**: Allows you to select the chroma target that will interact with the selection. You can adjust its range, smoothness of the step, and opacity.
+    - **Luma Mask**: Lets you select the luma target that will interact with the selection. You can adjust its range, smoothness of the step, and opacity.
+- **Blending Mode**: Choose a blending mode to determine how the two masks should interact with each other. You can opt for "addition" or "multiplication" to achieve different effects. This feature is especially useful if you want to select specific elements such as red shadows (multiply) or both reds and shadows (add).
  
 <p align="center"><img src="https://cdn.discordapp.com/attachments/804451693853016085/1015703965352067183/UnityEmpty3d_2022-09-03_15-58-38_overlay.png">
 
@@ -168,17 +135,17 @@ As the title suggests it's a shader for masking purposes using colors as the tar
 
 # AspectRatioMultiGrid
 
-I use AspectRatioComposition a lot, but there were some stuff I wish it did, therefore I made my own spin on the matter.
+While I frequently utilize `AspectRatioComposition`, I encountered certain features that I wished it had. As a result, I created my own variation of the concept.
 
 ## Features:
 
-- Turn off AR bars if you just want to use the grids.
-- Choose different ARs from a list you can write yourself in the reshade UI (read the tooltip to see how to do it).
-- Choose a specific AR with sliders like AspectRatioComposition.
-- Render a big amount of different types of grids at the same time.
-- Option to make the grid color be the opposite of the pixels behind the grid to contrast it against the game's screen.
-- Adjust the grid lines' width to better see them when using DSR.
-- The ability to move lines around to make your own custom grid, or use a custom grid image if you prefer.
+- Disable AR bars if you only want to use the grids.
+- Select different aspect ratios from a customizable list within the ReShade UI (refer to the tooltip for instructions on how to edit it).
+- Choose a specific aspect ratio using sliders, similar to AspectRatioComposition.
+- Display multiple types of grids simultaneously.
+- Enable the grid color to contrast with the pixels behind it, creating a distinctive visual effect against the game's screen.
+- Adjust the width of the grid lines for better visibility, especially when utilizing DSR (Dynamic Super Resolution).
+- Move lines to create custom grids or utilize a custom grid image if desired.
 
 And more!
 
@@ -186,17 +153,19 @@ And more!
 
 
 # Things to do
-- Change how the fog values work
-- Use a bicubic or another filter for scaling the image in StageDepthPlus since it's essentially using the nearest neighbor method.
-- Make the Color Mask shader work with color selection, saturation range, and light range.
-- Make the shaders interface more user friendly
-- Fix the strip gradient not maintaining the scale while changing the angle
-- Fix the diamond gradient to rotate with the modifications done in the x and y axes
-- Change the gradient to another color space
+- Refactor CanvasFog, CanvasMask and StageDepthPlus. I wrote thos when I didnt know how scaling and rotation matrices worked, so the code use pure ad-hoc horror.
+
+- Refactor CanvasFog, CanvasMask, and StageDepthPlus. These shaders were initially created without a proper understanding of scaling and rotation matrices, so the code use pure ad-hoc horror.
+
+- Fix the Strip gradient in CanvasFog so that it maintains the scale correctly while changing the angle.
+- Adjust the Diamond gradient in CanvasFog to rotate properly with modifications made in the x and y axes.
+- Implement different types of scaling algorithms in StageDepthPlus for more flexibility.
  
-Any bug or suggestion you got don't hesitate in hitting me up.
+If you encounter any bugs or have any suggestions, please feel free to reach out to me. Your feedback is greatly appreciated.
  
 # Support and donations
-A thank you is more than enough, but if you would also like to help me out you can do it through [PayPal](https://www.paypal.com/paypalme/originalnicodr). Thank you very much to the very gentle folks that supported me, you guys are the best:
+I genuinely appreciate your support, and a simple thank you is more than enough. However, if you would like to further assist me, you can contribute through [PayPal](https://www.paypal.com/paypalme/originalnicodr). I am incredibly grateful to the kind individuals who have already supported me. Your generosity is truly appreciated and motivates me to continue my work.
+
+## Top Donators
  
 - **Dread**
