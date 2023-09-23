@@ -99,19 +99,11 @@ uniform float gridOpacity <
 
 uniform float  gridLinesWidth<
 	ui_category = "Grid";
-	ui_label = "Lines width";
-	ui_min = 0.001; ui_max = 0.1;
+	ui_label = "Lines width in Pixels";
+	ui_min = 1.0; ui_max = 5.0;
 	ui_type = "slider";
 	ui_step = 0.001;
-> = 0.001;
-
-/*
-uniform bool ResizeMode <
-	ui_category = "Grid";
-	ui_label = "Resize mode";
-	ui_tooltip = "Resize mode: 0 is clamp to screen (so resizing of overlay, no golden ratio by definition),\n1: resize to either full with or full height while keeping aspect ratio: golden ratio by definition in lined area.";
-> = true;
-*/
+> = 1.0;
 
 uniform bool RuleofThirds <
 	ui_category = "Grid";
@@ -230,88 +222,92 @@ uniform bool CustomGridImage <
 	Functions
 ******************************************************************************/
 
+#define linearstep(_a, _b, _x) saturate(((_x) - (_a)) * rcp((_b) - (_a)))
+
 //Credits to gPlatl: https://www.shadertoy.com/view/MlcGDB
-float segment(float2 P, float2 A, float2 B, float r) 
+float segmentsdf(float2 P, float2 A, float2 B) 
 {
     float2 g = B - A;
     float2 h = P - A;
-    float d = length(h - g * clamp(dot(g, h) / dot(g,g), 0.0, 1.0));
-    return smoothstep(r, 0.5*r, d);
+
+	float2 scale = rcp(float2(ddx(P.x), ddy(P.y)));
+	g *= abs(scale);
+	h *= abs(scale);
+
+	float2 df = h - g * saturate(dot(g, h) / dot(g, g));
+
+    return dot(df, df);
 }
 
-float triangles(float2 texcoord){
-	float diagonal = segment(texcoord, float2(0, 0), float2(1, 1), gridLinesWidth);
-    float line1 = segment(texcoord, float2(0, 1), float2(1/4., 1/4.), gridLinesWidth);
-	float line2 = segment(texcoord, float2(1, 0), float2(3/4., 3/4.), gridLinesWidth);
-	return diagonal + line1 + line2;
+float shade_line(float sdf, float r)
+{
+	return linearstep(r + 0.5, r - 0.5, sqrt(max(0, sdf)));
 }
 
-float diagonals(float2 texcoord){
-	float diagonal1 = segment(texcoord, float2(0, 0), float2(1, 1), gridLinesWidth);
-	float diagonal2 = segment(texcoord, float2(1, 0), float2(0, 1), gridLinesWidth);
-	return diagonal1 + diagonal2;
+void triangles(inout float sdf, float2 texcoord){
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 0), float2(1, 1))); //diagonal
+    sdf = min(sdf, segmentsdf(texcoord, float2(0, 1), float2(1/4., 1/4.))); //line1
+	sdf = min(sdf, segmentsdf(texcoord, float2(1, 0), float2(3/4., 3/4.))); //line2
 }
 
-float special(float2 texcoord){
-	float d1 = segment(texcoord, float2(0, 0), float2(4/9., 1), gridLinesWidth);
-	float d2 = segment(texcoord, float2(0, 1), float2(4/9., 0), gridLinesWidth);
-	float d3 = segment(texcoord, float2(1, 0), float2(5/9., 1), gridLinesWidth);
-	float d4 = segment(texcoord, float2(1, 1), float2(5/9., 0), gridLinesWidth);
-	return d1 + d2 + d3 + d4;
+void diagonals(inout float sdf, float2 texcoord){
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 0), float2(1, 1))); //diagonal1
+	sdf = min(sdf, segmentsdf(texcoord, float2(1, 0), float2(0, 1))); //diagonal2	
 }
 
-
-float special2(float2 texcoord){
-	float d1 = segment(texcoord, float2(0, 0), float2(0.5, 1), gridLinesWidth);
-	float d2 = segment(texcoord, float2(0.5, 1), float2(1, 0), gridLinesWidth);
-	float d3 = segment(texcoord, float2(0, 1), float2(0.5, 0), gridLinesWidth);
-	float d4 = segment(texcoord, float2(0.5, 0), float2(1, 1), gridLinesWidth);
-	return d1 + d2 + d3 + d4;
-}
-
-float special3(float2 texcoord){
-	float d1 = segment(texcoord, float2(0, 0), float2(1, 0.5), gridLinesWidth);
-	float d2 = segment(texcoord, float2(0, 0.5), float2(1, 0), gridLinesWidth);
-	float d3 = segment(texcoord, float2(0, 0.5), float2(1, 1), gridLinesWidth);
-	float d4 = segment(texcoord, float2(0, 1), float2(1, 0.5), gridLinesWidth);
-	return d1 + d2 + d3 + d4;
+void special(inout float sdf, float2 texcoord){
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 0), float2(4/9., 1))); //d1
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 1), float2(4/9., 0))); //d2
+	sdf = min(sdf, segmentsdf(texcoord, float2(1, 0), float2(5/9., 1))); //d3
+	sdf = min(sdf, segmentsdf(texcoord, float2(1, 1), float2(5/9., 0))); //d4	
 }
 
 
-float diamond(float2 texcoord){
-	float d1 = segment(texcoord, float2(0, 0.5), float2(0.5, 1), gridLinesWidth);
-	float d2 = segment(texcoord, float2(0.5, 1), float2(1, 0.5), gridLinesWidth);
-	float d3 = segment(texcoord, float2(1, 0.5), float2(0.5, 0), gridLinesWidth);
-	float d4 = segment(texcoord, float2(0.5, 0), float2(0, 0.5), gridLinesWidth);
-	return d1 + d2 + d3 + d4;
+void special2(inout float sdf, float2 texcoord){
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 0), float2(0.5, 1))); //d1
+	sdf = min(sdf, segmentsdf(texcoord, float2(0.5, 1), float2(1, 0))); //d2
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 1), float2(0.5, 0))); //d3
+	sdf = min(sdf, segmentsdf(texcoord, float2(0.5, 0), float2(1, 1))); //d4	
 }
 
-float ruleOfThirds(float2 texcoord){
-	float ly1 = segment(texcoord, float2(1/3., 0), float2(1/3., 1), gridLinesWidth);
-	float ly2 = segment(texcoord, float2(2/3., 0), float2(2/3., 1), gridLinesWidth);
-	float lx1 = segment(texcoord, float2(0, 1/3.), float2(1, 1/3.), gridLinesWidth);
-	float lx2 = segment(texcoord, float2(0, 2/3.), float2(1, 2/3.), gridLinesWidth);
-	return ly1 + ly2 + lx1 + lx2;
+void special3(inout float sdf, float2 texcoord){
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 0), float2(1, 0.5))); //d1
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 0.5), float2(1, 0))); //d2
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 0.5), float2(1, 1))); //d3
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 1), float2(1, 0.5))); //d4	
 }
 
-float ruleOfFifths(float2 texcoord){
-	float ly1 = segment(texcoord, float2(1/5., 0), float2(1/5., 1), gridLinesWidth);
-	float ly2 = segment(texcoord, float2(2/5., 0), float2(2/5., 1), gridLinesWidth);
-	float ly3 = segment(texcoord, float2(3/5., 0), float2(3/5., 1), gridLinesWidth);
-	float ly4 = segment(texcoord, float2(4/5., 0), float2(4/5., 1), gridLinesWidth);
-	float lx1 = segment(texcoord, float2(0, 1/5.), float2(1, 1/5.), gridLinesWidth);
-	float lx2 = segment(texcoord, float2(0, 2/5.), float2(1, 2/5.), gridLinesWidth);
-	float lx3 = segment(texcoord, float2(0, 3/5.), float2(1, 3/5.), gridLinesWidth);
-	float lx4 = segment(texcoord, float2(0, 4/5.), float2(1, 4/5.), gridLinesWidth);
-	return ly1 + ly2 + ly3 + ly4 + lx1 + lx2 + lx3 + lx4;
+
+void diamond(inout float sdf, float2 texcoord){
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 0.5), float2(0.5, 1))); //d1
+	sdf = min(sdf, segmentsdf(texcoord, float2(0.5, 1), float2(1, 0.5))); //d2
+	sdf = min(sdf, segmentsdf(texcoord, float2(1, 0.5), float2(0.5, 0))); //d3
+	sdf = min(sdf, segmentsdf(texcoord, float2(0.5, 0), float2(0, 0.5))); //d4	
 }
 
-float customGrid(float2 texcoord){
-	float l1 = segment(texcoord, CustomGridLine1.zw, CustomGridLine1.xy, gridLinesWidth);
-	float l2 = segment(texcoord, CustomGridLine2.zw, CustomGridLine2.xy, gridLinesWidth);
-	float l3 = segment(texcoord, CustomGridLine3.zw, CustomGridLine3.xy, gridLinesWidth);
-	float l4 = segment(texcoord, CustomGridLine4.zw, CustomGridLine4.xy, gridLinesWidth);
-	return l1 + l2 + l3 + l4;
+void ruleOfThirds(inout float sdf, float2 texcoord){
+	sdf = min(sdf, segmentsdf(texcoord, float2(1/3., 0), float2(1/3., 1))); //d1
+	sdf = min(sdf, segmentsdf(texcoord, float2(2/3., 0), float2(2/3., 1))); //d2
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 1/3.), float2(1, 1/3.))); //d3
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 2/3.), float2(1, 2/3.))); //d4	
+}
+
+void ruleOfFifths(inout float sdf, float2 texcoord){
+	sdf = min(sdf, segmentsdf(texcoord, float2(1/5., 0), float2(1/5., 1))); //ly1
+	sdf = min(sdf, segmentsdf(texcoord, float2(2/5., 0), float2(2/5., 1))); //ly2
+	sdf = min(sdf, segmentsdf(texcoord, float2(3/5., 0), float2(3/5., 1))); //ly3
+	sdf = min(sdf, segmentsdf(texcoord, float2(4/5., 0), float2(4/5., 1))); //ly4
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 1/5.), float2(1, 1/5.))); //lx1
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 2/5.), float2(1, 2/5.))); //lx2
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 3/5.), float2(1, 3/5.))); //lx3
+	sdf = min(sdf, segmentsdf(texcoord, float2(0, 4/5.), float2(1, 4/5.))); //lx4
+}
+
+void customGrid(inout float sdf, float2 texcoord){
+	sdf = min(sdf, segmentsdf(texcoord, CustomGridLine1.zw, CustomGridLine1.xy));//l1
+	sdf = min(sdf, segmentsdf(texcoord, CustomGridLine2.zw, CustomGridLine2.xy));//l2
+	sdf = min(sdf, segmentsdf(texcoord, CustomGridLine3.zw, CustomGridLine3.xy));//l3
+	sdf = min(sdf, segmentsdf(texcoord, CustomGridLine4.zw, CustomGridLine4.xy));//l4
 }
 
 #ifndef CUSTOM_GRID_IMAGE
@@ -327,61 +323,29 @@ sampler	customGridSampler
 	AddressV = BORDER;
 };
 
-float customGridImage(float2 texcoord){
-	return 1 - tex2D(customGridSampler, texcoord).r;
+void customGridImage(float sdf, float2 texcoord){
+	float grid = 1 - tex2D(customGridSampler, texcoord).r;
+	sdf = lerp(sdf, 0, grid);
 }
 
-texture	goldenRatioTex <source= "golden_ratio.png"; > { Width = 1156; Height = 715; MipLevels = 1; Format = RGBA8; };
 
-sampler	goldenRatioSampler
-{
-	Texture = goldenRatioTex;
-	AddressU = BORDER;
-	AddressV = BORDER;
-};
+//Kitbash of this https://www.shadertoy.com/view/wtlGD4
+//with some scaling and code to remove the buggy line
+void fibonacci(inout float sdf, float2 texcoord){
+	texcoord.x *= 1.618;
+	texcoord *= 0.896;
 
-//Based on Otis_inf GoldenRatio.fx
-/*
-float fibonacciOtis(float2 texcoord){
-	float phiValue = ((1.0 + sqrt(5.0))/2.0);
-	float aspectRatio = (float)iUIAspectRatio.x/(float)iUIAspectRatio.y;
+	texcoord += 0.618 * float2(-0.65, -0.402);
+	float l = length(texcoord);
+	float a = atan2(texcoord.y, -texcoord.x);
+	float tv = log(l) / (4.0 * log(1.618));
+	float v = tv - a / 6.283 - 1.0;
 
-	int fakeBufferHeight = BUFFER_HEIGHT;
-	int fakeBufferWidth = BUFFER_WIDTH;
+	float2 dfdx = ddx(tv);
+	float2 dfdy = ddy(tv);
 
-	if(aspectRatio < BUFFER_ASPECT_RATIO)
-	{
-		fakeBufferWidth = BUFFER_HEIGHT * aspectRatio;
-	}
-	else
-	{
-		fakeBufferHeight = BUFFER_WIDTH / aspectRatio;
-	}
-
-	float idealWidth = fakeBufferHeight * phiValue;
-	float idealHeight = fakeBufferWidth / phiValue;
-	float4 sourceCoordFactor = float4(1.0, 1.0, 1.0, 1.0);
-
-	if(ResizeMode){
-		if(aspectRatio < phiValue)
-		{
-			// display spirals at full width, but resize across height
-			sourceCoordFactor = float4(1.0, fakeBufferHeight/idealHeight, 1.0, idealHeight/fakeBufferHeight);
-		}
-		else
-		{
-			// display spirals at full height, but resize across width
-			sourceCoordFactor = float4(fakeBufferWidth/idealWidth, 1.0, idealWidth/fakeBufferWidth, 1.0);
-		}
-	}
-	
-	return tex2D(goldenRatioSampler, float2((texcoord.x * sourceCoordFactor.x) - ((1.0-sourceCoordFactor.z)/2.0),
-														(texcoord.y * sourceCoordFactor.y) - ((1.0-sourceCoordFactor.w)/2.0))).a;
-}
-*/
-
-float fibonacci(float2 texcoord){
-	return tex2D(goldenRatioSampler, texcoord).a;
+	float t = abs(frac(v) - 0.5) * rsqrt(dot(dfdx, dfdx) + dot(dfdy, dfdy));
+	sdf = min(sdf, t);
 }
 
 float DrawAR(float aspectRatio, float2 texcoord){
@@ -449,29 +413,31 @@ float getAR(){
 float3 AspectRatioMultiGrid_PS(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target
 {
     float3 color = UseWhiteBackground ? float3(1,1,1) : tex2D(ReShade::BackBuffer, texcoord).rgb;
-	float3 realGridColor = gridInverseColor ? 1 - color : gridColor;
-
+	float3 realGridColor = gridInverseColor ? smoothstep(0, 1, 1 - color) : gridColor;
 	float ar = getAR();
 	float2 remappedTexcoord = texcoordRemapAR(ar, texcoord);
 
 	float lines = 0;
-	if (RuleofThirds) lines = lines + ruleOfThirds(remappedTexcoord);
-	if (RuleofFifths) lines = lines + ruleOfFifths(remappedTexcoord);
-	if (Triangles1) lines = lines + triangles(remappedTexcoord);
-	if (Triangles2) lines = lines + triangles(float2(1-remappedTexcoord.x,remappedTexcoord.y));
-	if (Diagonals) lines = lines + diagonals(remappedTexcoord);
-	if (Diamond) lines = lines + diamond(remappedTexcoord);
-	if (Special1) lines = lines + special(remappedTexcoord);
-	if (Special2) lines = lines + special2(remappedTexcoord);
-	if (Special3) lines = lines + special3(remappedTexcoord);
-	if (FibonacciBottomRight) lines = lines + fibonacci(remappedTexcoord);
-	if (FibonacciBottomLeft) lines = lines + fibonacci(float2(1-remappedTexcoord.x,remappedTexcoord.y));
-	if (FibonacciTopRight) lines = lines + fibonacci(float2(remappedTexcoord.x,1-remappedTexcoord.y));
-	if (FibonacciTopLeft) lines = lines + fibonacci(float2(1-remappedTexcoord.x,1-remappedTexcoord.y));
-	if (CustomGrid) lines = lines + customGrid(remappedTexcoord);
-	if (CustomGridImage) lines = lines + customGridImage(remappedTexcoord);
+	float line_sdf = 1000000;
+	[branch]if(RuleofThirds) 			ruleOfThirds(line_sdf, remappedTexcoord);
+	[branch]if(RuleofFifths) 			ruleOfFifths(line_sdf, remappedTexcoord);
+	[branch]if(Triangles1) 				triangles(line_sdf, remappedTexcoord);
+	[branch]if(Triangles2) 				triangles(line_sdf, float2(1-remappedTexcoord.x,remappedTexcoord.y));
+	[branch]if(Diagonals) 				diagonals(line_sdf, remappedTexcoord);
+	[branch]if(Diamond) 				diamond(line_sdf, remappedTexcoord);
+	[branch]if(Special1) 				special(line_sdf, remappedTexcoord);
+	[branch]if(Special2) 				special2(line_sdf, remappedTexcoord);
+	[branch]if(Special3) 				special3(line_sdf, remappedTexcoord);
+	[branch]if(FibonacciTopLeft) 		fibonacci(line_sdf, remappedTexcoord);
+	[branch]if(FibonacciTopRight) 		fibonacci(line_sdf, float2(1-remappedTexcoord.x,remappedTexcoord.y));
+	[branch]if(FibonacciBottomLeft) 	fibonacci(line_sdf, float2(remappedTexcoord.x,1-remappedTexcoord.y));
+	[branch]if(FibonacciBottomRight) 	fibonacci(line_sdf, float2(1-remappedTexcoord.x,1-remappedTexcoord.y));
+	[branch]if(CustomGrid) 				customGrid(line_sdf, remappedTexcoord);
+	[branch]if(CustomGridImage) 		customGridImage(line_sdf, remappedTexcoord);
 
-	color = lerp(color, realGridColor, min(gridOpacity, lines));
+	lines = shade_line(line_sdf, gridLinesWidth);
+
+	color = lerp(color, realGridColor, gridOpacity * saturate(lines));
 
 	if (ARMode != 0){
 		float aspectRatioBars = DrawAR(ar, texcoord);
