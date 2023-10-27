@@ -408,7 +408,7 @@ void AfterPS(float4 vpos : SV_Position, float2 texcoord : TEXCOORD, out float4 f
 		}
 	}
 
-	if (FlipFog) {fogFactor = 1-clamp(saturate(depth - FogStart) * FogCurve, 0.0, 1-MaxFogFactor);}
+	if (FlipFog) fogFactor = 1 - fogFactor;
 
     switch (GradientType){
 		case 0: {

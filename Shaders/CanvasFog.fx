@@ -891,7 +891,6 @@ void PS_Otis_Original_BlendFogWithNormalBuffer(float4 vpos: SV_Position, float2 
 		fogFactor= saturate(fogFactor-(1-fogFactor)*noise);
 	}
 
-	//if (FlipFog) fogFactor = 1-clamp(saturate(depth - FogStart) * FogCurve, 0.0, 1-MaxFogFactor);
 	if (FlipFog) fogFactor = 1-fogFactor;
 
 	//Takes the color sampled or the one from the color picker
