@@ -409,6 +409,11 @@ float getAR(){
 	return ar;
 }
 
+#if (__RENDERER__ >= 0xb000)
+#define BRANCH [branch]
+#else
+#define BRANCH 
+#endif
 
 float3 AspectRatioMultiGrid_PS(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target
 {
@@ -419,21 +424,21 @@ float3 AspectRatioMultiGrid_PS(float4 vpos : SV_Position, float2 texcoord : TexC
 
 	float lines = 0;
 	float line_sdf = 1000000;
-	[branch]if(RuleofThirds) 			ruleOfThirds(line_sdf, remappedTexcoord);
-	[branch]if(RuleofFifths) 			ruleOfFifths(line_sdf, remappedTexcoord);
-	[branch]if(Triangles1) 				triangles(line_sdf, remappedTexcoord);
-	[branch]if(Triangles2) 				triangles(line_sdf, float2(1-remappedTexcoord.x,remappedTexcoord.y));
-	[branch]if(Diagonals) 				diagonals(line_sdf, remappedTexcoord);
-	[branch]if(Diamond) 				diamond(line_sdf, remappedTexcoord);
-	[branch]if(Special1) 				special(line_sdf, remappedTexcoord);
-	[branch]if(Special2) 				special2(line_sdf, remappedTexcoord);
-	[branch]if(Special3) 				special3(line_sdf, remappedTexcoord);
-	[branch]if(FibonacciTopLeft) 		fibonacci(line_sdf, remappedTexcoord);
-	[branch]if(FibonacciTopRight) 		fibonacci(line_sdf, float2(1-remappedTexcoord.x,remappedTexcoord.y));
-	[branch]if(FibonacciBottomLeft) 	fibonacci(line_sdf, float2(remappedTexcoord.x,1-remappedTexcoord.y));
-	[branch]if(FibonacciBottomRight) 	fibonacci(line_sdf, float2(1-remappedTexcoord.x,1-remappedTexcoord.y));
-	[branch]if(CustomGrid) 				customGrid(line_sdf, remappedTexcoord);
-	[branch]if(CustomGridImage) 		customGridImage(line_sdf, remappedTexcoord);
+	BRANCH if(RuleofThirds) 			ruleOfThirds(line_sdf, remappedTexcoord);
+	BRANCH if(RuleofFifths) 			ruleOfFifths(line_sdf, remappedTexcoord);
+	BRANCH if(Triangles1) 				triangles(line_sdf, remappedTexcoord);
+	BRANCH if(Triangles2) 				triangles(line_sdf, float2(1-remappedTexcoord.x,remappedTexcoord.y));
+	BRANCH if(Diagonals) 				diagonals(line_sdf, remappedTexcoord);
+	BRANCH if(Diamond) 				diamond(line_sdf, remappedTexcoord);
+	BRANCH if(Special1) 				special(line_sdf, remappedTexcoord);
+	BRANCH if(Special2) 				special2(line_sdf, remappedTexcoord);
+	BRANCH if(Special3) 				special3(line_sdf, remappedTexcoord);
+	BRANCH if(FibonacciTopLeft) 	fibonacci(line_sdf, remappedTexcoord);
+	BRANCH if(FibonacciTopRight) 	fibonacci(line_sdf, float2(1-remappedTexcoord.x,remappedTexcoord.y));
+	BRANCH if(FibonacciBottomLeft) 		fibonacci(line_sdf, float2(remappedTexcoord.x,1-remappedTexcoord.y));
+	BRANCH if(FibonacciBottomRight) 		fibonacci(line_sdf, float2(1-remappedTexcoord.x,1-remappedTexcoord.y));
+	BRANCH if(CustomGrid) 				customGrid(line_sdf, remappedTexcoord);
+	BRANCH if(CustomGridImage) 		customGridImage(line_sdf, remappedTexcoord);
 
 	lines = shade_line(line_sdf, gridLinesWidth);
 
