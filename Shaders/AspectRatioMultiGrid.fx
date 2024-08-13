@@ -28,6 +28,11 @@ static const float ASPECT_RATIOS[] = {ASPECT_RATIO_LIST_VALUES, 0.0};
 	Uniforms
 ******************************************************************************/
 
+uniform bool HideOnScreenshot <
+	ui_label = "Hide on screenshot";
+	ui_tooltip = "Avoid drawing aspect ratio black bars and grids when taking a screenshot.";
+> = false;
+
 uniform int ARMode <
 	ui_category = "Aspect Ratio";
 	ui_label = "Aspect Ratio Mode";
@@ -316,6 +321,8 @@ void customGrid(inout float sdf, float2 texcoord){
 
 texture	customGridTex <source= CUSTOM_GRID_IMAGE; > { Width = 1920; Height = 1080; MipLevels = 1; Format = RGBA8; };
 
+uniform bool SCREENSHOT < source = "screenshot"; >;
+
 sampler	customGridSampler
 {
 	Texture = customGridTex;
@@ -417,7 +424,12 @@ float getAR(){
 
 float3 AspectRatioMultiGrid_PS(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target
 {
-    float3 color = UseWhiteBackground ? float3(1,1,1) : tex2D(ReShade::BackBuffer, texcoord).rgb;
+	float3 backbuffer = tex2D(ReShade::BackBuffer, texcoord).rgb;
+	if (SCREENSHOT && HideOnScreenshot) {
+		return backbuffer;
+	}
+
+    float3 color = UseWhiteBackground ? float3(1,1,1) : backbuffer;
 	float3 realGridColor = gridInverseColor ? smoothstep(0, 1, 1 - color) : gridColor;
 	float ar = getAR();
 	float2 remappedTexcoord = texcoordRemapAR(ar, texcoord);

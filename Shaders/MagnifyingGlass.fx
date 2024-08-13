@@ -8,10 +8,16 @@ namespace MagnifyingGlass
 
 uniform float2 MouseCoords < source = "mousepoint"; >;
 uniform bool LeftMouseDown < source = "mousebutton"; keycode = 0; toggle = false; >;
+uniform bool SCREENSHOT < source = "screenshot"; >;
 
 #ifndef MAGNIFYING_GLASS_MAX_ZOOM
 	#define MAGNIFYING_GLASS_MAX_ZOOM 5
 #endif
+
+uniform bool HideOnScreenshot <
+	ui_label = "Hide on screenshot";
+	ui_tooltip = "Avoid drawing the magnifying glass when taking a screenshot.";
+> = false;
 
 uniform float lensZoom <
 	ui_category = "Lens";
@@ -84,6 +90,11 @@ sampler2D pointBuffer //this is also new
 
 float3 MagnifyingGlass_PS(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target
 {
+	float3 color = tex2D(ReShade::BackBuffer, texcoord).rgb;
+	if (SCREENSHOT && HideOnScreenshot) {
+		return color;
+	}
+
     const float halfBorderWidth = lensBorderWidth / 2.0;
 	const float innerRadius = lensRadius - halfBorderWidth;
 	const float outerRadius = lensRadius + halfBorderWidth;
@@ -91,8 +102,6 @@ float3 MagnifyingGlass_PS(float4 vpos : SV_Position, float2 texcoord : TexCoord)
 	float2 magnifyingGlassPos = useUICoords ? magnifyingGlassUICoords : MouseCoords * BUFFER_PIXEL_SIZE;
 
 	float dist = sqrt(pow((texcoord.x - magnifyingGlassPos.x) * BUFFER_ASPECT_RATIO, 2.0) + pow(texcoord.y - magnifyingGlassPos.y, 2.0)); //edited
-
-    float3 color = tex2D(ReShade::BackBuffer, texcoord).rgb;
 
 	float3 realBorderColor = invertColorBackground ? 1 - color : lensBorderColor;
 

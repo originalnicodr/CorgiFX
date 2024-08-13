@@ -2,6 +2,12 @@
 
 #include "ReShade.fxh"
 
+uniform bool HideOnScreenshot <
+	ui_category = "Controls";
+	ui_label = "Hide on screenshot";
+	ui_tooltip = "Avoid drawing anything when taking a screenshot.";
+> = false;
+
 uniform bool FlipH < 
 	ui_label = "Flip Horizontal";
     ui_category = "Controls";
@@ -340,6 +346,8 @@ float2 rotate(float2 v,float2 o, float a){
 	return v2;
 }
 
+uniform bool SCREENSHOT < source = "screenshot"; >;
+
 //float3 Freezef(float4 position : SV_Position, float2 texcoord : TexCoord, out float4 color : SV_Target)
 void Freezef(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, out float3 color : SV_Target)
 {
@@ -396,6 +404,11 @@ void Freezef(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, o
 			if (BlackBackground) color= float3(0,0,0);
 		}
 	}
+
+	if (SCREENSHOT && HideOnScreenshot) {
+		color = backbuffer.rgb;
+	}
+
 	//color.a = backbuffer.a;
     //return color;
 }
