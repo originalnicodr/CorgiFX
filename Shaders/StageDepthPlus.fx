@@ -507,14 +507,10 @@ namespace StageDepthPlus
 		if (FlipH) {uvtemp.x = 1-uvtemp.x;}//horizontal flip
 	    if (FlipV) {uvtemp.y = 1-uvtemp.y;} //vertical flip
 
-		float2 Layer_Scalereal= float2 (Layer_Scale.x-0.44,(Layer_Scale.y-0.44)*STAGE_TEXTURE_WIDTH/STAGE_TEXTURE_HEIGHT);
-
 	    float2 Layer_Posreal= float2((FlipH) ? -Layer_Pos.x : Layer_Pos.x, (FlipV) ? Layer_Pos.y:-Layer_Pos.y);
 
-		uvtemp= float2(((uvtemp.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),uvtemp.y);
-		
-		uvtemp=(rotate(uvtemp,Layer_Posreal+0.5,radians(Axis))*Layer_Scalereal-((Layer_Posreal+0.5)*Layer_Scalereal-0.5));
-
+		uvtemp = (uvtemp - Layer_Posreal - 0.5f) * BUFFER_SCREEN_SIZE;
+		uvtemp = rotate(uvtemp, 0, radians(Axis)) * Layer_Scale / BUFFER_SCREEN_SIZE + float2(0.5f, 0.5f);
 
 		float4 layer  = RepeatTextureEnabled ? tex2D(Stageplus_sampler_Repeat, uvtemp).rgba : tex2D(Stageplus_sampler, uvtemp).rgba;
 

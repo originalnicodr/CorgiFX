@@ -351,15 +351,14 @@ uniform bool SCREENSHOT < source = "screenshot"; >;
 //float3 Freezef(float4 position : SV_Position, float2 texcoord : TexCoord, out float4 color : SV_Target)
 void Freezef(in float4 position : SV_Position, in float2 texcoord : TEXCOORD0, out float3 color : SV_Target)
 {
-    float2 Layer_Scalereal= float2 (Layer_Scale.x-0.44,(Layer_Scale.y-0.44)*BUFFER_WIDTH/BUFFER_HEIGHT);
-    float2 Layer_Posreal= float2((FlipH) ? -Layer_Pos.x : Layer_Pos.x, (FlipV) ? Layer_Pos.y:-Layer_Pos.y);
+    float2 Layer_Posreal = float2((FlipH) ? -Layer_Pos.x : Layer_Pos.x, (FlipV) ? Layer_Pos.y:-Layer_Pos.y);
 	float4 backbuffer = tex2D(ReShade::BackBuffer, texcoord).rgba;
 	float depth = 1 - ReShade::GetLinearizedDepth(texcoord).r;
-    float2 uvtemp= texcoord;
+    float2 uvtemp = texcoord;
     if (FlipH) {uvtemp.x = 1-uvtemp.x;}//horizontal flip
     if (FlipV) {uvtemp.y = 1-uvtemp.y;} //vertical flip
-	uvtemp=float2(((uvtemp.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),uvtemp.y);
-    uvtemp=(rotate(uvtemp,Layer_Posreal+0.5,radians(Axis))*Layer_Scalereal-((Layer_Posreal+0.5)*Layer_Scalereal-0.5));
+	uvtemp = (uvtemp - Layer_Posreal - 0.5f) * BUFFER_SCREEN_SIZE;
+	uvtemp = rotate(uvtemp, 0, radians(Axis)) * Layer_Scale / BUFFER_SCREEN_SIZE + float2(0.5f, 0.5f);
 	float4 layer     = tex2D(FreezeSamplernew, uvtemp).rgba;
 
 	//layer.a=BlackBackground ? 1 : layer.a;
