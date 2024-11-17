@@ -23,11 +23,12 @@ float2 TextureCoordsModifier(float2 texcoord, float2 pos, float2 scale, float ax
 	
 	if (fh) {uvtemp.x = 1-uvtemp.x;}
 	if (fv) {uvtemp.y = 1-uvtemp.y;}
-	float2 Layer_Scalereal= float2 (scale.x-0.44,(scale.y-0.44)*STAGE_TEXTURE_WIDTH/STAGE_TEXTURE_HEIGHT);
+
 	float2 Layer_Posreal= float2((fh) ? -pos.x : pos.x, (fv) ? pos.y:-pos.y);
-	uvtemp= float2(((uvtemp.x*BUFFER_WIDTH-(BUFFER_WIDTH-BUFFER_HEIGHT)/2)/BUFFER_HEIGHT),uvtemp.y);
 	
-	uvtemp=(rotate(uvtemp,Layer_Posreal+0.5,radians(axis))*Layer_Scalereal-((Layer_Posreal+0.5)*Layer_Scalereal-0.5));
+	uvtemp = (uvtemp - Layer_Posreal - 0.5f) * BUFFER_SCREEN_SIZE;
+	
+	uvtemp=rotate(uvtemp,(Layer_Posreal + 0.5f), radians(axis)) * scale / BUFFER_SCREEN_SIZE + float2(0.5f, 0.5f);
 
 	return uvtemp;
 }
